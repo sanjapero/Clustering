@@ -1,0 +1,89 @@
+---
+title: "Fallstudie 1"
+author: "Sanja Perovic"
+date: "7/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+# Data preparation
+## a
+```{r}
+df <- read.csv("https://raw.githubusercontent.com/kirenz/datasets/master/responses.csv")
+df
+```
+```{r}
+library(tidyr)
+df<- drop_na(df)
+df
+```
+## b
+```{r}
+library(dplyr)
+df_1 <- select (df, c("Height",
+                      "Weight",
+                      "Gender"))
+df_1
+```
+## c
+```{r}
+library(ggplot2)
+x <- df_1$Height
+y <- df_1$Weight
+
+  plot (
+    x, y, main = "scatterplot",
+    xlab = "Height",
+    ylab = "Weight")
+```
+
+## d
+```{r}
+x <- select (df_1, c("Height",
+                     "Weight"))
+
+x$Height_sc <- scale (x$Height,
+                      scale =TRUE)
+
+x$Weight_sc <- scale (x$Weight,
+                      scale =TRUE)
+
+x_std <- select(x, c("Height_sc",
+                     "Weight_sc"))
+x_std
+```
+```{r}
+x <- x_std$Height_sc
+y <- x_std$Weight_sc
+
+  plot (
+    x, y, main = "scatterplot_sc",
+    xlab = "Height",
+    ylab = "Weight")
+```
+
+## e
+um Werte, die sich in unterschiedlichen Wertebereichen befinden, vergleichen zu können muss der Mittelwert auf 0 und die Standardabweichung auf 1 gesetzt werden
+
+# k-Means
+
+## a
+```{r}
+set.seed(123)
+kmeans(x_std, 2, nstart = 8)
+```
+
+## b
+
+- startet von 8 verschiedenen starting points
+- je höher der starting point desto besser (für ein stabileres resultat)
+
+
+
