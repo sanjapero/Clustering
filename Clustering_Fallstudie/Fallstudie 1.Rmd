@@ -1,6 +1,6 @@
 ---
 title: "Fallstudie 1"
-author: "Sanja Perovic"
+author: "Sanja Perovic, Julia Zerrweck"
 date: "7/29/2020"
 output: html_document
 ---
@@ -77,7 +77,7 @@ um Werte, die sich in unterschiedlichen Wertebereichen befinden, vergleichen zu 
 ## a
 ```{r}
 set.seed(123)
-kmeans(x_std, 2, nstart = 8)
+x_cluster <- kmeans(x_std, 2, nstart = 8)
 ```
 
 ## b
@@ -85,5 +85,99 @@ kmeans(x_std, 2, nstart = 8)
 - startet von 8 verschiedenen starting points
 - je höher der starting point desto besser (für ein stabileres resultat)
 
+## c
 
+- total SS = Summe der quadrierten Abstände jeder Beobachtung zur Gesamtstichprobe 
+
+- between SS = Anstatt einen Gesamtstichproben-AVG zu berechnen, berechnen wir einen pro Cluster und berechnen dann die Summe der quadrierten Abstände dieser zwei Mittelwerte zum Gesamt-AVG, wir erhalten zwischen_SS. (Während wir dies berechnen, multiplizieren wir den quadrierten Abstand jedes Durchschnittswertes zum Gesamt-Durchschnittswert mit der Anzahl der Beobachtungen, die er repräsentiert).
+
+60.6% = die totale Varianz im dataset
+
+## d
+
+```{r}
+x_std$gender_kmeans <- as.factor(x_cluster$cluster)
+
+```
+
+## e
+
+```{r}
+ggplot(x_std, 
+       aes(Height_sc, Weight_sc, color = gender_kmeans)) + 
+  geom_point()
+
+```
+
+# Hierarchical Clustering (Ward)
+
+## a
+```{r}
+d <- 
+  x_std %>% 
+  select(-gender_kmeans) %>% 
+  dist(method = "euclidean")
+d
+```
+
+
+```{r}
+hc <- hclust(d, method = "ward.D2") 
+```
+
+```{r}
+sort(unique(cophenetic(hc)))
+```
+
+## b
+```{r}
+plot (hc)
+
+```
+```{r}
+plot(hc, hang = -2, cex = 0.6)
+hc$labels <- x_std$Weight_sc
+rect.hclust(hc, k = 2, border = "red")
+```
+```{r}
+gruppen <- cutree(hc, k = 2) 
+```
+
+
+## d
+```{r}
+x_std$gender_ward <- gruppen
+
+```
+
+## e
+```{r}
+ggplot(x_std, 
+       aes(Height_sc, Weight_sc, color = gender_ward)) + 
+  geom_point()
+```
+# Compare results
+
+## a
+```{r}
+ggplot(df_1, 
+       aes(Height, Weight, color = Gender)) + 
+  geom_point()
+
+ggplot(df_1, 
+       aes(Height, Weight, color = x_std$gender_kmeans)) + 
+  geom_point()
+
+ggplot(df_1, 
+       aes(Height, Weight, color = x_std$gender_ward)) + 
+  geom_point()
+```
+
+- unterschied zwischen kmeans und ward und welche methode für was besser geeignet ist
+
+# Finalize data
+```{r}
+df_3 <- x_std %>%
+  filter(gender_kmeans == "1")
+```
 
