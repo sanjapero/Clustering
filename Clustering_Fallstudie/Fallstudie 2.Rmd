@@ -1,0 +1,117 @@
+---
+title: "Fallstudie 2"
+author: "Sanja Perovic, Julia Zerrweck"
+date: "8/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+# 1 Data Preparation
+```{r}
+install.packages("arules")
+library(arules)
+```
+## a
+```{r}
+trans <- read.transactions('data.csv', , format = 'basket', sep=',')
+```
+## b
+```{r}
+dim (trans)
+```
+Wir haben 7501 transaction data und 119 distinct items.
+
+## c
+```{r}
+itemLabels(trans)
+```
+
+## d
+```{r}
+summary(trans)
+```
+
+## e
+```{r}
+itemFrequencyPlot(trans, topN=3,  cex.names=1)
+```
+
+# A-Priori Algorithm
+```{r}
+install.packages("arulesViz")
+library(arulesViz)
+```
+
+## a
+```{r}
+rules <- apriori(trans, 
+                 parameter = list(supp=0.01, conf=0.2,
+                                  maxlen=10,
+                                  target= "rules"))
+
+```
+```{r}
+summary(rules)
+```
+1. set of rules: 164
+2. 1, 116, 47
+3. Median :0.01646, Median :0.2654, Median :1.5718
+
+## e
+```{r}
+water_rules_rhs <- apriori(trans, 
+                          parameter = list(supp=0.01, conf=0.5, 
+                                         maxlen=10, 
+                                         minlen=2),
+                          appearance = list(default="lhs", rhs="mineral water"))
+```
+
+## f
+```{r}
+inspect(water_rules_rhs)
+```
+
+## g
+
+
+## h
+```{r}
+eggs_rules_lhs <- apriori(trans, 
+                          parameter = list(supp=0.01, conf=0.2, 
+                                         maxlen=10, 
+                                         minlen=2),
+                          appearance = list(default="rhs", lhs="eggs"))
+```
+
+## i
+```{r}
+inspect(eggs_rules_lhs)
+```
+
+# 3 Visualizing association rules
+## 3.1 
+### a
+```{r}
+plot(rules, engine = "plotly")
+```
+
+## 3.2
+### b
+```{r}
+subrules <- head(rules, n = 5, by = "lift")
+
+plot(subrules, method = "graph",  engine = "htmlwidget")
+```
+
+## 3.3
+### a
+```{r}
+plot(subrules, method="paracoord")
+```
+

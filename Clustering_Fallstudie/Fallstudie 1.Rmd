@@ -21,7 +21,7 @@ df
 ```
 ```{r}
 library(tidyr)
-df<- drop_na(df)
+df <- drop_na(df)
 df
 ```
 ## b
@@ -78,6 +78,7 @@ um Werte, die sich in unterschiedlichen Wertebereichen befinden, vergleichen zu 
 ```{r}
 set.seed(123)
 x_cluster <- kmeans(x_std, 2, nstart = 8)
+x_cluster
 ```
 
 ## b
@@ -97,6 +98,7 @@ x_cluster <- kmeans(x_std, 2, nstart = 8)
 
 ```{r}
 x_std$gender_kmeans <- as.factor(x_cluster$cluster)
+x_std
 
 ```
 
