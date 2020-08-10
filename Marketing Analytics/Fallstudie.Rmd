@@ -1,0 +1,76 @@
+---
+title: "Fallstudie"
+author: "Sanja Perovic, Julia Zerrweck"
+date: "8/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+
+#1 Regression I
+## a
+
+```{r}
+library(ISLR)
+data(Auto)
+fit <- lm(mpg ~ horsepower, data = Auto)
+summary(fit)
+```
+### 1
+- p Wert ist kleiner als 1, also kann die Nullhypothese verworfen werden. 
+- bedeutet, dass es eine signifikante Beziehung gibt
+
+
+### 2
+```{r}
+mean(Auto$mpg, trim = 0, na.rm = FALSE)
+```
+
+```{r}
+(4.906/23.446)*100
+```
+The mean of mpg is 23.4459. The RSE of the lm.fit was 4.906 which indicates a percentage error of 20.9248%. The R-squared of the lm.fit was about 0.6059, meaning 60.5948% of the variance in mpg is explained by horsepower.
+
+
+### 3
+```{r}
+cor <- cor.test(Auto$mpg, Auto$horsepower)
+
+cor$estimate
+```
+negativ
+
+### 4
+nachschlagen
+
+### 5
+```{r}
+predict(fit, data.frame(horsepower = 98), interval = "confidence")
+```
+
+### 6
+```{r}
+sqrt(mean(residuals(fit)^2))
+```
+Its just the square root of the mean of the squared residuals, like the name implies. It is the square root of the MSE.
+
+```{r}
+plot(Auto$horsepower, Auto$mpg, main = "scatterplot", xlab = "horsepower", ylab = "mpg", col = "red")
+abline(fit, lwd = 3, col = "green")
+```
+
+```{r}
+
+
+require(tree)
+tree.dt <- tree (mpg ~ horsepower, data = Auto)
+summary(tree.dt)
+```
+
