@@ -66,11 +66,54 @@ plot(Auto$horsepower, Auto$mpg, main = "scatterplot", xlab = "horsepower", ylab 
 abline(fit, lwd = 3, col = "green")
 ```
 
+
 ```{r}
+library(tidymodels)
+library(skimr)
+set.seed(42)
+train <- sample(Auto, 3/4)
+testdat  <- Auto[train]
+traindat <- Auto[train]
+```
+
+```{r}
+install.packages("gbm")
+library(gbm)
+library(MASS)
+set.seed(42)
+boost.dt <- gbm(mpg ~ horsepower, data = Auto, distribution = "gaussian", n.trees = 5000, interaction.depth = 4)
+summary(boost.dt, plotit = FALSE)
+
+```
+```{r}
+hp_plot <- plot(boost.dt, i = "horsepower")
+gridExtra::grid.arrange(hp_plot, ncol = 2)
+```
 
 
-require(tree)
-tree.dt <- tree (mpg ~ horsepower, data = Auto)
-summary(tree.dt)
+
+
+
+# 4 Gender Analysis
+## 4.1.
+```{r}
+library(tidymodels)
+library(skimr)
+```
+
+
+```{r}
+# Fix the random numbers by setting the seed 
+# This enables the analysis to be reproducible 
+# when random numbers are used 
+set.seed(42)
+
+# Put 3/4 of the data into the training set 
+data_split <- initial_split(responses, 
+                            prop = 3/4)
+
+# Create data frames for the two sets:
+train_data <- training(data_split)
+test_data  <- testing(data_split)
 ```
 
