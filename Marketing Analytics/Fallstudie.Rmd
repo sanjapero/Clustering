@@ -39,6 +39,9 @@ mean(Auto$mpg, trim = 0, na.rm = FALSE)
 The mean of mpg is 23.4459. The RSE of the lm.fit was 4.906 which indicates a percentage error of 20.9248%. The R-squared of the lm.fit was about 0.6059, meaning 60.5948% of the variance in mpg is explained by horsepower.
 
 
+
+
+
 ### 3
 ```{r}
 cor <- cor.test(Auto$mpg, Auto$horsepower)
@@ -67,16 +70,10 @@ abline(fit, lwd = 3, col = "green")
 ```
 
 
+## c
 ```{r}
-library(tidymodels)
-library(skimr)
-set.seed(42)
-train <- sample(Auto, 3/4)
-testdat  <- Auto[train]
-traindat <- Auto[train]
-```
+#https://rpubs.com/coleeagland/decisiontreesislr834
 
-```{r}
 install.packages("gbm")
 library(gbm)
 library(MASS)
@@ -85,13 +82,167 @@ boost.dt <- gbm(mpg ~ horsepower, data = Auto, distribution = "gaussian", n.tree
 summary(boost.dt, plotit = FALSE)
 
 ```
+
+
 ```{r}
 hp_plot <- plot(boost.dt, i = "horsepower")
 gridExtra::grid.arrange(hp_plot, ncol = 2)
 ```
 
+### c 1.
+```{r}
+predict(boost.dt , data.frame(horsepower = 98), interval = "confidence")
 
+```
+### c 2.
+```{r}
+sqrt(mean(residuals(boost.dt ~ fit)^2))
+```
 
+# Regression II
+## a
+
+```{r}
+library(ggplot2)
+x <- Auto$weight
+y <- Auto$mpg
+plot (x, y, main = "scatterplot",
+      xlab = "Weight",
+      ylab = "MPG")
+```
+
+```{r}
+library(ggplot2)
+x <- Auto$cylinders
+y <- Auto$horsepower
+plot (x, y, main = "scatterplot",
+      xlab = "Cylinders",
+      ylab = "Horsepower")
+```
+
+```{r}
+library(ggplot2)
+x <- Auto$acceleration
+y <- Auto$horsepower
+plot (x, y, main = "scatterplot",
+      xlab = "Acceleration",
+      ylab = "Horsepower")
+```
+
+## b
+```{r}
+names(Auto)
+```
+
+```{r}
+cor(Auto[1:8])
+```
+## c
+### 1
+```{r}
+mlm <- lm(mpg ~ . -name, data = Auto)
+summary(mlm)
+```
+### 2
+
+### 3
+
+### 4
+```{r}
+predict(mlm, data.frame(horsepower = 98), interval = "confidence")
+```
+### 5
+```{r}
+sqrt(mean(residuals(mlm)^2))
+```
+
+## d
+### 1
+```{r}
+library(gbm)
+library(MASS)
+set.seed(42)
+boost.mlm <- gbm(mpg ~ . -name, data = Auto, distribution = "gaussian", n.trees = 5000, interaction.depth = 4)
+summary(boost.mlm, plotit = FALSE)
+```
+### 2
+```{r}
+sqrt(mean(residuals(boost.mlm)^2))
+```
+
+# 3 Sales Analysis
+## a
+```{r}
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+```
+
+```{r}
+new_split <- initial_split(sales) 
+new_train <- training(new_split) 
+new_test <- testing(new_split)
+```
+
+#ausklammern
+```{r}
+lm_spec %>%
+ fit(Price ~ Urban, data = new_train) %>%
+ predict(new_test) %>%
+ mutate(truth = new_test$Price) %>%
+ rmse(truth, .pred)
+```
+
+```{r}
+set.seed(42)
+
+cv_folds <-
+ vfold_cv(sales, 
+          v = 10, 
+          strata = Price,
+          breaks = 4) 
+
+cv_folds
+```
+
+```{r}
+data(sales)
+fit3 <- lm(Sales ~ Price + Urban + US, data = sales)
+summary(fit3)
+```
+## b
+```{r}
+
+```
+## c
+```{r}
+
+```
+
+## d
+```{r}
+fit4 <- lm(Sales ~ Price + US, data = Carseats)
+summary(fit4)
+```
+## e
+```{r}
+
+```
+
+## f
+```{r}
+library(gbm)
+library(MASS)
+set.seed(42)
+boost.fit3 <- gbm(Sales ~ Price, data = sales, distribution = "gaussian", n.trees = 5000, interaction.depth = 4)
+summary(boost.fit3, plotit = FALSE)
+```
+
+## f 1. 
+```{r}
+sqrt(mean(residuals(boost.fit3)^2))
+```
 
 
 # 4 Gender Analysis
