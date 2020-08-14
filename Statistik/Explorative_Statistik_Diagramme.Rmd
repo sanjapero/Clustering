@@ -1,0 +1,156 @@
+---
+title: "explorative Statistik"
+output: html_document
+author: "Julia Zerrweck"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r}
+library(readr)
+library(ggplot2)
+library(tidyverse)
+df <- read_csv("/Users/juliazerrweck/Desktop/responses.csv")
+```
+
+```{r}
+glimpse(df)
+```
+
+```{r}
+df <- drop_na(df)
+```
+
+```{r}
+df$Smoking <- as.factor(df$Smoking)
+levels(df$Smoking)
+```
+
+```{r}
+df$Gender <- as.factor(df$Gender)
+levels(df$Gender)
+```
+
+
+# Histogramme
+## Histogramm 1
+```{r}
+ggplot(df, aes( x = Age)) +
+                geom_histogram(binwidth = 5, color= "black", fill = "lightblue") +
+                  labs(title="Alter der Teilnehmer",
+                       subtitle="Histogramm")+
+                  xlab("Alter der Teilnehmer") +
+                  ylab("Anzahl der Teilnehmer")
+  
+```
+
+# Barplots
+## Barplot 1
+```{r}
+ggplot(df, aes( x = Shopping)) +
+  geom_bar(fill = "Red", color = "Darkblue") +
+  labs(title="Shoppingfreude der Teilnehmer",
+       subtitle="Barplot")+
+  xlab("Shoppingfreude der Teilnehmer") +
+  ylab("Anzahl der Teilnehmer")
+```
+
+# Faceted Barplot
+## Facedet Barplot 1
+```{r}
+ggplot(df, aes( x = Gender)) + # Entfernung von fill
+  geom_bar( position = "dodge", fill= "red") +
+  facet_wrap(~ df$`Romantic` ) + # Getrennte Darstellung der Ausprägungen 
+  ggtitle("Mögen romantische Filme", "1 (wenig) 5(sehr)") +
+  xlab("Geschlecht der Teilnehmer") +
+  ylab("Anzahl der Teilnehmer") +
+  theme_classic() +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.5, 
+                                   hjust=  1))
+```
+# Stacked Barplot
+## Stacked Barplot 1
+```{r}
+ggplot(df, aes(   x = Western, 
+                 fill = Smoking)) +
+  geom_bar( position = "fill") + # Änderung der Darstellung
+  ggtitle("Zusammenhang Rauchen und Westernfilmliebhaber") +
+  xlab("Wie sehr mag ich Western-Filme") +
+  ylab("Anzahl der Antworten") +
+  theme_classic() +
+  scale_fill_brewer(palette = "Reds") +
+  theme(legend.title = element_blank())
+```
+# Side by Side Barplot
+## Side by Side Barplot 1
+```{r}
+ggplot(df, aes(   x = Politics, 
+                 fill = Gender)) +
+  geom_bar( position = "dodge") +
+  ggtitle("Zusammenhand Geschlecht und Interesse an der Politik") +
+  xlab("Interesse an der Politik") +
+  ylab("Anzahl der Teilnehmer") +
+  theme_classic() +
+  scale_fill_brewer(palette = "Reds") +
+  theme(legend.title = element_blank())
+```
+
+# Boxplot
+## Boxplot 1
+```{r}
+ggplot(df, aes( x =Gender, # kategoriale Variable
+                  y= df$`Flying`)) + # numerische Variable
+  geom_boxplot(fill ="red", position = "dodge") +
+  ggtitle("Zusammenhand Geschlecht und Angst vorm Fliegen", "keine Angst (1) bis große Angst (5)") +
+  xlab("Geschlecht") +
+  ylab("Skala Angst vor dem FLiegen") +
+  theme_classic()
+```
+
+# Faceted Histogramm
+## Faceted Histogramm 1
+```{r}
+ggplot(df, aes( x = Health)) +
+  geom_histogram(fill ="red", binwidth = 2, color = "darkblue")+
+  facet_wrap(~Alcohol) +
+  ggtitle("Zusammenhand Alkohol und Gesundheit", "Wie viele kümmern sich um ihre Gesundheit und trinken Alkohol") +
+  xlab("Alkohol") +
+  ylab("Anzahl Teilnehmer, die auf Ihre Gesundheit achten ") +
+  theme_classic()
+```
+
+# Scatterplot
+## Scatterplot 1
+```{r}
+ggplot(df, aes( x= Age,
+                y= Finances)) +
+         geom_point( color ="red") +
+  ggtitle("Zusammenhand Alter und Sparsam") +
+  xlab("Alter") +
+  ylab("Sparsam") +
+  theme_classic()
+```
+
+# Line Graph
+## Line Graph 1
+```{r}
+df <-     # Speichern des Ergebnisses
+  df %>%  # Nutzung der Daten aus wage
+  group_by(`Age`) %>%  # Gruppierung der Daten nach Alter
+  mutate(mean_Loneliness = mean(Loneliness, na.rm = TRUE)) %>%  # Berechnung Mittelwert pro Gruppe und Erzeugung der neuen Variable mean_wage
+  ungroup() # Gruppierung wieder aufheben
+ggplot(df, aes( x =Age,
+                y = mean_Loneliness)) + 
+  geom_line(alpha=1, color="red")+
+  ggtitle("Die Einsamekeit in den Altersgruppen") +
+  xlab("Alter") +
+  ylab("Einsamkeit") 
+  theme_classic()
+```
