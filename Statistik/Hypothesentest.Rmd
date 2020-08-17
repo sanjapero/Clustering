@@ -1,0 +1,248 @@
+---
+title: "Hypothesentest"
+author: "Sanja Perovic, Julia Zerrweck"
+date: "8/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r}
+library(readr)
+library(tidyverse)
+mafo <- read_csv("responses.csv")
+mafo <- drop_na(mafo)
+```
+
+```{r}
+glimpse (mafo)
+```
+
+```{r}
+mafo <- drop_na(mafo)
+```
+# 2 Deskriptive Statistik
+
+## Nominal 1
+### Modus
+```{r}
+table(mafo$Gender)
+```
+
+## Metrisch 1
+### Mittelwert
+```{r}
+mean (mafo$Age)
+```
+
+
+### Modus
+```{r}
+table(mafo$Age)
+```
+
+### Median
+```{r}
+median(mafo$Age)
+```
+
+### Quartilsabstände
+```{r}
+IQR(mafo$Age)
+```
+
+### Standardabweichung
+```{r}
+sd(mafo$Age)
+```
+
+## Metrisch 2
+### Mittelwert
+```{r}
+mean(mafo$Weight)
+```
+
+### Modus
+```{r}
+table(mafo$Weight)
+```
+
+### Median
+```{r}
+median(mafo$Weight)
+```
+
+### Quartilsabstände
+```{r}
+IQR(mafo$Weight)
+```
+
+### Standardabweichung
+```{r}
+sd (mafo$Weight)
+```
+
+
+# Ordinal 1
+### Mittelwert
+```{r}
+mean(mafo$Loneliness)
+```
+
+### Modus
+```{r}
+table(mafo$Loneliness)
+```
+
+### Median
+```{r}
+median(mafo$Loneliness)
+```
+
+### Quartilsabstände
+```{r}
+IQR(mafo$Loneliness)
+```
+
+### Standardabweichung
+```{r}
+sd (mafo$Loneliness)
+```
+
+# Ordinal 2
+### Mittelwert
+```{r}
+mean(mafo$God)
+```
+
+### Modus
+```{r}
+table(mafo$God)
+```
+
+### Median
+```{r}
+median(mafo$God)
+```
+
+### Quartilsabstände
+```{r}
+IQR(mafo$God)
+```
+
+### Standardabweichung
+```{r}
+sd (mafo$God)
+```
+
+# 3 Hypothesentests
+
+## a
+```{r}
+t.test(mafo$`Friends versus money` ~ Gender, data = mafo)
+```
+p-Wert unter 0.05: Wert ist also signifikant und kann nicht verworfen werden. das heißt, es gibt einen Unterschied zwischen den Geschlechtern bei der Präferenz.
+
+### 1
+H1: Zwischen den Geschlechtern gibt es einen Unterschied in deren Präferenz für Freunde vs. Geld. 
+H0: Zwischen den Geschlechtern gibt es keinen Unterschied in deren Präferenz für Freunde vs. Geld. 
+
+### 2
+
+Beantworten Sie jeweils die folgenden Fragen (Hinweis: nutzen Sie ein Histogramm für die Prüfung der Verteilung): 
+- Skalenniveau abhängige Variable 
+Ordinalskala
+
+- Skalenniveau unabhängige Variable (Gruppenvariable) 
+Nominalskala
+
+- Unabhängigkeit der Stichproben (ja/nein) 
+Ja, da die beiden Variablen sich nicht gegenseitig beeinflussen.
+
+- Stufen der unabhängigen Variable  
+Männlich, Weiblich
+
+- Geeigneter Hypothesentest
+t-Test
+
+### 3
+```{r}
+t.test(mafo$`Friends versus money` ~ Gender, data = mafo)
+```
+
+#### - Verteilung der abhängigen Variable
+
+```{r}
+sum(mafo$`Friends versus money` == 1)
+sum(mafo$`Friends versus money` == 2)
+sum(mafo$`Friends versus money` == 3)
+sum(mafo$`Friends versus money` == 4)
+sum(mafo$`Friends versus money` == 5)
+```
+
+```{r}
+friendsvsmoney <- mafo$`Friends versus money`
+hist(friendsvsmoney,
+     main="Verteilung Friends vs. Money",
+     xlab="Anzahl der Antworten",
+     xlim=c(1,5),
+     breaks = c(5),
+     col="darkmagenta")
+```
+
+
+```{r}
+
+```
+
+
+#### 1. Hypothese
+
+70% der Teilnehmer sind über 170 cm groß.
+
+```{r}
+sum(mafo$Height >= 170)
+```
+
+```{r}
+binom1 <- binom.test(436, 674, 0.7) 
+  
+binom1
+```
+ist signifikant
+
+#### 2. Hypothese
+
+90% der Teilnehmer wiegen über 50kg.
+```{r}
+sum(mafo$Weight >= 50)
+```
+
+```{r}
+binom1 <- binom.test(630, 674, 0.9) 
+  
+binom1
+```
+ist signifikant
+
+
+
+#### 1. Hypothese
+Menschen, die mehr Geschwister haben fühlen sich weniger einsam.
+```{r}
+chisq.test(mafo$`Number of siblings`, mafo$Loneliness)
+```
+Ist nicht signifikant, da der p-Wert über 0.05 liegt: wird verworfen.
+
+#### 2. Hypothese
+Menschen die aktiv Sport betreiben geben mehr Geld für gesundes Essen aus.
+```{r}
+chisq.test(mafo$`Active sport`, mafo$`Spending on healthy eating`)
+```
+Ist signifikant und wird nicht verworfen.
