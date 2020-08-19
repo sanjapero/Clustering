@@ -42,6 +42,7 @@ Gibt den Prozentsatz an, wie viele nicht-Null Zellen in der Matrix vorhanden sin
 ###2
 Set mit 1 Item in 1754 Transactions. Dies Bedeutet dass 1754 Transaktionen lediglich 1 Artikel beinhaltet.
 ###3
+Auch Oberes Quartil genannt. Zeigt wie die ersten 75% der Daten abschneiden. In 75% der Daten wurden in 667 Transaktionen ein Itemset von 5 Produkten gekauft
 
 ## e
 ```{r}
