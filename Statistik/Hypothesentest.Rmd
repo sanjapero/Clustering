@@ -13,6 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+# 1 Datenvorbereitung
 ```{r}
 library(readr)
 library(tidyverse)
@@ -27,9 +28,10 @@ glimpse (mafo)
 ```{r}
 mafo <- drop_na(mafo)
 ```
+
 # 2 Deskriptive Statistik
 
-## Nominal 1
+## Nominal
 ### Modus
 ```{r}
 table(mafo$Gender)
@@ -88,8 +90,7 @@ IQR(mafo$Weight)
 sd (mafo$Weight)
 ```
 
-
-# Ordinal 1
+## Ordinal 1
 ### Mittelwert
 ```{r}
 mean(mafo$Loneliness)
@@ -115,7 +116,7 @@ IQR(mafo$Loneliness)
 sd (mafo$Loneliness)
 ```
 
-# Ordinal 2
+## Ordinal 2
 ### Mittelwert
 ```{r}
 mean(mafo$God)
@@ -171,12 +172,7 @@ Männlich, Weiblich
 - Geeigneter Hypothesentest
 t-Test
 
-### 3
-```{r}
-t.test(mafo$`Friends versus money` ~ Gender, data = mafo)
-```
-
-#### - Verteilung der abhängigen Variable
+#### Verteilung der abhängigen Variable
 
 ```{r}
 sum(mafo$`Friends versus money` == 1)
@@ -196,12 +192,14 @@ hist(friendsvsmoney,
      col="darkmagenta")
 ```
 
-
+### 3
 ```{r}
-
+t.test(mafo$`Friends versus money` ~ Gender, data = mafo)
 ```
+p-Wert unter 0.05: Wert ist also signifikant und kann nicht verworfen werden. das heißt, es gibt einen Unterschied zwischen den Geschlechtern bei der Präferenz.
 
-
+## b
+### Binominaltest
 #### 1. Hypothese
 
 70% der Teilnehmer sind über 170 cm groß.
@@ -215,7 +213,7 @@ binom1 <- binom.test(436, 674, 0.7)
   
 binom1
 ```
-ist signifikant
+Ist signifikant und wird nicht verworfen.
 
 #### 2. Hypothese
 
@@ -229,11 +227,12 @@ binom1 <- binom.test(630, 674, 0.9)
   
 binom1
 ```
-ist signifikant
+Ist signifikant und kann nicht verworfen werden.
 
 
-
+### CHI Test
 #### 1. Hypothese
+
 Menschen, die mehr Geschwister haben fühlen sich weniger einsam.
 ```{r}
 chisq.test(mafo$`Number of siblings`, mafo$Loneliness)
@@ -241,6 +240,7 @@ chisq.test(mafo$`Number of siblings`, mafo$Loneliness)
 Ist nicht signifikant, da der p-Wert über 0.05 liegt: wird verworfen.
 
 #### 2. Hypothese
+
 Menschen die aktiv Sport betreiben geben mehr Geld für gesundes Essen aus.
 ```{r}
 chisq.test(mafo$`Active sport`, mafo$`Spending on healthy eating`)

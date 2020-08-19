@@ -61,6 +61,7 @@ ggplot(df, aes( x = Loneliness)) +
   xlab("Einsamkeit der Teilnehmer") +
   ylab("Anzahl der Teilnehmer")
 ```
+
 ## Barplot 2
 ```{r}
 ggplot(df, aes( x = Shopping)) +
@@ -86,6 +87,7 @@ ggplot(df, aes( x = Gender)) + # Entfernung von fill
                                    vjust = 0.5, 
                                    hjust=  1))
 ```
+
 ## Facedet Barplot 2
 ```{r}
 ggplot(df, aes( x = Gender)) + # Entfernung von fill
@@ -114,6 +116,7 @@ ggplot(df, aes(   x = Gender,
   scale_fill_brewer(palette = "Greens") +
   theme(legend.title = element_blank())
 ```
+
 ## Stacked Barplot 2
 ```{r}
 ggplot(df, aes(   x = Western, 
@@ -140,6 +143,7 @@ ggplot(df, aes(   x = Age,
   scale_fill_brewer(palette = "Reds") +
   theme(legend.title = element_blank())
 ```
+
 ## Side by Side Barplot 2
 ```{r}
 ggplot(df, aes(   x = Politics, 
@@ -165,6 +169,7 @@ ggplot(df, aes( x = Education, # kategoriale Variable
   theme_classic()
 
 ```
+
 ## Boxplot 2
 ```{r}
 ggplot(df, aes( x =Gender, # kategoriale Variable
@@ -187,6 +192,7 @@ ggplot(df, aes( x = God)) +
   ylab("Anzahl Teilnehmer, die schon gelogen haben") +
   theme_classic()
 ```
+
 ## Faceted Histogramm 2
 ```{r}
 ggplot(df, aes( x = Health)) +
@@ -209,6 +215,7 @@ ggplot(df, aes( x= Height,
   ylab("Gewicht") +
   theme_classic()
 ```
+
 ## Scatterplot 2
 ```{r}
 ggplot(df, aes( x= Age,
@@ -238,6 +245,7 @@ ggplot(df, aes( x = Age,
   ylab("Gartenarbeit") 
   theme_classic()
 ```
+
 ## Line Graph 2
 ```{r}
 df <-     # Speichern des Ergebnisses
