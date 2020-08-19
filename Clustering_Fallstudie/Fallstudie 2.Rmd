@@ -36,12 +36,18 @@ itemLabels(trans)
 ```{r}
 summary(trans)
 ```
+###1
+Density: 0.03288973 -> 3,2% 
+Gibt den Prozentsatz an, wie viele nicht-Null Zellen in der Matrix vorhanden sind.
+###2
+Set mit 1 Item in 1754 Transactions. Dies Bedeutet dass 1754 Transaktionen lediglich 1 Artikel beinhaltet.
+###3
 
 ## e
 ```{r}
 itemFrequencyPlot(trans, topN=3,  cex.names=1)
 ```
-
+Eier und Spaghetti haben eine ähnliche "relative item frequency" mit ca. 17% während es bei Mineralwasser bei mehr als 20% liegt.
 # A-Priori Algorithm
 ```{r}
 install.packages("arulesViz")
@@ -59,9 +65,19 @@ rules <- apriori(trans,
 ```{r}
 summary(rules)
 ```
+
+##b
+Support: Wie oft erscheint eine Reihe von Gegenständen im Warenkorb
+Confidence: Wie oft ist die Support-Regel tatsächlich eingetreten
+
+##c
 1. set of rules: 164
 2. 1, 116, 47
 3. Median :0.01646, Median :0.2654, Median :1.5718
+
+##d
+Lift:  
+das gleichzeitige Auftreten von Produkt A und Produkt B übersteigt die erwartete Wahrscheinlichkeit des gleichzitigen Auftretens der Produkte wenn sie unabhängig gewesen wären um einen bestimmten Faktor (Lift)
 
 ## e
 ```{r}
@@ -76,8 +92,16 @@ water_rules_rhs <- apriori(trans,
 ```{r}
 inspect(water_rules_rhs)
 ```
+LHS: Erst Hackfleisch und dann Milch bei der ersten Regel und bei der zweiten erst Eier und dann Hackfleisch
+RHS: Beides mal Mineralwasser
+Support: 1,1% der Kunden haben entweder nach einem Einkauf von Hackfleisch und milch oder Eier und Hackfleisch Mineralwasser gekauft
+Confidence: Beide Regeln treten mit einer wahrscheinlichkeit von 50% ein. Die zweite Regel ein bisschen wahrscheinlicher als die Erste
+Lift: liegt beides mal bei >1 sodass beides mal es ehr wahrscheinlich ist, dass nach dem kauf von Hackfleisch und milch oder Eier und Hackfleisch mineralwasser gekauft wird
 
 ## g
+Coverage: ist ein Faktor, wie oft die Regel auf der Linken Seite (LHS) der allgemeinen Regel angewendet werden kann
+2,2% rule 1
+2,0% rule 2
 
 
 ## h
@@ -93,6 +117,15 @@ eggs_rules_lhs <- apriori(trans,
 ```{r}
 inspect(eggs_rules_lhs)
 ```
+erst eier und dann Pommes
+support:0.03639515	die Regel haben 3,6% der Kunden eingehalten
+confidence: 0.2025223 die Regel tritt mit einer wahrscheinlichekti von 20% ein
+coverage: 0.1797094	17% der Kunden kaufen eier
+lift: 1.184961	liegt >1 sodass es wahrscheinlich ist dass es zusammen gekauft wird
+
+##j
+
+
 
 # 3 Visualizing association rules
 ## 3.1 
@@ -100,6 +133,9 @@ inspect(eggs_rules_lhs)
 ```{r}
 plot(rules, engine = "plotly")
 ```
+1){} ->{mineral water}
+2){eggs, ground beef}->{mineral water}
+3){herb & pepper}->{ground beef}
 
 ## 3.2
 ### b
@@ -108,10 +144,15 @@ subrules <- head(rules, n = 5, by = "lift")
 
 plot(subrules, method = "graph",  engine = "htmlwidget")
 ```
+{herb & pepper}->{ground beef}
+{mineral water, spaghetti}->{ground beef}
 
 ## 3.3
 ### a
 ```{r}
 plot(subrules, method="paracoord")
 ```
+{herb & pepper}->{ground beef}
+{mineral water, spaghetti}->{ground beef}
+
 
