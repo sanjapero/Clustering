@@ -1,6 +1,6 @@
 ---
 title: "Statistik Diagramme"
-author: "Sanja Perovic"
+author: "Sanja Perovic, Julia Zerrweck"
 date: "8/6/2020"
 output: html_document
 ---
@@ -28,15 +28,6 @@ glimpse(df)
 df <- drop_na(df)
 ```
 
-```{r}
-df$Smoking <- as.factor(df$Smoking)
-levels(df$Smoking)
-```
-
-```{r}
-df$Gender <- as.factor(df$Gender)
-levels(df$Gender)
-```
 
 # Histogramme
 ## Histogramm 1
@@ -76,6 +67,7 @@ ggplot(df, aes( x = Gender)) + # Entfernung von fill
                                    vjust = 0.5, 
                                    hjust=  1))
 ```
+
 # Stacked Barplot
 ## Stacked Barplot 1
 ```{r}
@@ -89,6 +81,7 @@ ggplot(df, aes(   x = Gender,
   scale_fill_brewer(palette = "Greens") +
   theme(legend.title = element_blank())
 ```
+
 # Side by Side Barplot
 ## Side by Side Barplot 1
 ```{r}
@@ -113,6 +106,7 @@ ggplot(df, aes( x = Education, # kategoriale Variable
   xlab("Schulbildung") +
   ylab("Skala Glücklichsein") +
   theme_classic()
+
 ```
 
 # Faceted Histogramm
