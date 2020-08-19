@@ -42,13 +42,15 @@ Gibt den Prozentsatz an, wie viele nicht-Null Zellen in der Matrix vorhanden sin
 ###2
 Set mit 1 Item in 1754 Transactions. Dies Bedeutet dass 1754 Transaktionen lediglich 1 Artikel beinhaltet.
 ###3
-Auch Oberes Quartil genannt. Zeigt wie die ersten 75% der Daten abschneiden. In 75% der Daten wurden in 667 Transaktionen ein Itemset von 5 Produkten gekauft
+Auch Oberes Quartil genannt. Zeigt wie die ersten 75% der Daten abschneiden. 
+In den ersten 75% der Daten wurden in 667 Transaktionen ein Itemset von 5 Produkten gekauft
 
 ## e
 ```{r}
 itemFrequencyPlot(trans, topN=3,  cex.names=1)
 ```
 Eier und Spaghetti haben eine ähnliche "relative item frequency" mit ca. 17% während es bei Mineralwasser bei mehr als 20% liegt.
+
 # A-Priori Algorithm
 ```{r}
 install.packages("arulesViz")
@@ -68,8 +70,12 @@ summary(rules)
 ```
 
 ##b
-Support: Wie oft erscheint eine Reihe von Gegenständen im Warenkorb
-Confidence: Wie oft ist die Support-Regel tatsächlich eingetreten
+Support: 
+Wie beliebt ist eine Menge von Elementen, gemessen am Anteil der Transaktionen, in denen das Itemset erscheint. Es lässt sich berechnen indem man die Häufigkeit von A durch die Anzahl aller Transaktionen teilt. Normalerweise wird dabei noch ein Schwellenwert gesetzt, um die Anzahl der zu analysierenden Itemsets zu verringern.
+
+Confidence: 
+Wie wahrscheinlich ist es, dass Produkt B gekauft wird wenn Produkt A gekauft wurde. Es wird berechnet indem man support(A∪B) durch den support(A) teilt.
+Confidence gibt jedoch nur an, wie beliebt das Produkt A ist, nicht jedoch Produkt B. Wenn jedoch Produkt A sehr beliebt ist (confidence hoch) ist es wahrscheinlicher, dass Produkt B ebenfalls im Warenkorb landet.
 
 ##c
 1. set of rules: 164
@@ -78,7 +84,12 @@ Confidence: Wie oft ist die Support-Regel tatsächlich eingetreten
 
 ##d
 Lift:  
-das gleichzeitige Auftreten von Produkt A und Produkt B übersteigt die erwartete Wahrscheinlichkeit des gleichzitigen Auftretens der Produkte wenn sie unabhängig gewesen wären um einen bestimmten Faktor (Lift)
+Wie wahrscheinlich ist es, dass Artikel B gekauft wird, wenn Artikel A gekauft wird. Gleichzeitig wird gemessen, wie beliebt Artikel A und B sind -> es wird gemessen, wie oft A und B häufiger zusammen auftreten als erwartet, wenn sie statistisch unabhängig sind.
+Lift wird berechtnet indem man support(A∪B) durch support(A)×support(B) teilt.
+Bei Lift gibt es 3 verschieden Szenarien:
+lift=1: keine Assoziationen
+lift<1:B wird wahrscheinlich nicht gekauft wenn A gekauft wurde
+lift>1:B wird wahrscheinlich gekauft wenn A gekauft wurde
 
 ## e
 ```{r}
@@ -134,26 +145,44 @@ lift: 1.184961	liegt >1 sodass es wahrscheinlich ist dass es zusammen gekauft wi
 ```{r}
 plot(rules, engine = "plotly")
 ```
+###b
 1){} ->{mineral water}
 2){eggs, ground beef}->{mineral water}
 3){herb & pepper}->{ground beef}
 
 ## 3.2
-### b
+### a
 ```{r}
 subrules <- head(rules, n = 5, by = "lift")
 
 plot(subrules, method = "graph",  engine = "htmlwidget")
 ```
+###b
 {herb & pepper}->{ground beef}
+Die stärkste Regel besitzt einen Support von 1,6% und eine Confidence von 32,3%. LIft liegt bei 3.29 und ist somit größer als 1 und bestätigt die Wahrscheinlichkeit der Regel.
+support = 0.016
+confidence = 0.323
+coverage = 0.0495
+lift = 3.29
+count = 120
+order = 2
+
 {mineral water, spaghetti}->{ground beef}
+Die zweitstärkste Regel besitzt einen Support von 1,7% und eine Confidence von 5,9%. Lift liegt bei 2,91 und ist somit ebenfalls größer als 1 und bestätigt die Wahrscheinlichkeit der Regel.
+support = 0.0171
+confidence = 0.286
+coverage = 0.0597
+lift = 2.91
+count = 128
+order = 3
 
 ## 3.3
 ### a
 ```{r}
 plot(subrules, method="paracoord")
 ```
+###b
 {herb & pepper}->{ground beef}
 {mineral water, spaghetti}->{ground beef}
-
+Man kann wenig ablesen, auser in welcher Reihenfolge die LHS in den Warenkorb kommen, bevor RHS dazu kommt. Man erkennt ledgiglich an der Farbe, welche Regeln die stärksten sind.
 
