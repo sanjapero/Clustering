@@ -40,16 +40,19 @@ ggplot(df, aes( x = Age)) +
                   ylab("Anzahl der Teilnehmer")
   
 ```
+Das Alter der Teilnehmer liegt zwischen 15 und 30 Jahren, wobei die Mehrheit der Befragten Anfang 20 ist.
+
 ##Histogramm 2
 ```{r}
 ggplot(df, aes( x = Weight)) +
-                geom_histogram(binwidth = 5, color= "black", fill = "lightblue") +
+                geom_histogram(binwidth = 10, color= "black", fill = "lightblue") +
                   labs(title="Gewicht der Teilnehmer",
                        subtitle="Histogramm")+
                   xlab("Gewicht der Teilnehmer") +
                   ylab("Anzahl der Teilnehmer")
   
 ```
+Das Gewicht der Teilnehmer erstreckt sich bis zu 150kg. Allerdings sind im Schnitt die meisten Teilnehmer um die 60kg schwer.
 
 # Barplots
 ## Barplot 1
@@ -61,6 +64,7 @@ ggplot(df, aes( x = Loneliness)) +
   xlab("Einsamkeit der Teilnehmer") +
   ylab("Anzahl der Teilnehmer")
 ```
+5 Kategorien der Einsamkeit: die meisten Teilnehmer gaben an, dass sie sich wenig bis mittelmäßig einsam fühlen. 
 
 ## Barplot 2
 ```{r}
@@ -71,6 +75,7 @@ ggplot(df, aes( x = Shopping)) +
   xlab("Shoppingfreude der Teilnehmer") +
   ylab("Anzahl der Teilnehmer")
 ```
+Es ist deutlich zu sehen, dass die Angaben sich kaum unterscheiden: nur eine kleine Anzahl gab an, dass sie nicht so gerne shoppen geht. Dem Rest kann man eine mittelmäßige bis hohe Shoppingfreude zuschreiben.
 
 # Faceted Barplot
 ## Facedet Barplot 1
@@ -87,6 +92,8 @@ ggplot(df, aes( x = Gender)) + # Entfernung von fill
                                    vjust = 0.5, 
                                    hjust=  1))
 ```
+Aktive sportliche Tätogkeit nach Geschlecht:
+Man kann deutlich sehen, dass die meisten Männer angegeben haben, dass sie sehr häufig sportlich aktiv sind, während die Frauen in den Kategorien 1-4 dominieren. Vor allem bei dere niedrigsten Kategorie (1) dominieren die Frauen mit einem sehr hohen Anteil. Sie sind also weniger sportlich aktiv als Männer.
 
 ## Facedet Barplot 2
 ```{r}
@@ -102,6 +109,8 @@ ggplot(df, aes( x = Gender)) + # Entfernung von fill
                                    vjust = 0.5, 
                                    hjust=  1))
 ```
+Präferenz romantische Filme nach Geschlecht:
+Das Schaublid zeigt sehr deutlich, dass Frauen in den höheren Kategorien (4 und 5) hoch vertreten sind. Das heißt, dass sie romantische Filme mehr als Männer mögen, da diese in den Kategorien 4 und 5 deutlich den Frauen unterlegen. Sie dominieren dafür in den niedrigeren Kategorien, also kann man schlussfolgern, dass Männer nicht so gerne romantische Filme anschauen.
 
 # Stacked Barplot
 ## Stacked Barplot 1
@@ -116,6 +125,10 @@ ggplot(df, aes(   x = Gender,
   scale_fill_brewer(palette = "Greens") +
   theme(legend.title = element_blank())
 ```
+Pünktlichkeit nach Geschlecht:
+die meisten der Frauen gaben an, dass sie immer pünktlich sind. Wobei es einen kleinen Unterschied zu den Männern gibt. Es gaben nämlich mehr Männer als Frauen an immer pünktlich zu sein. 
+Beide Geschlechter sind gleich übeerpünktlich.
+Allerdings haben mehr Frauen als Männer mit der Zeit zu kämpfen und sind öfter spät dran als Männer.
 
 ## Stacked Barplot 2
 ```{r}
@@ -130,52 +143,62 @@ ggplot(df, aes(   x = Western,
   theme(legend.title = element_blank())
 ```
 
+
 # Side by Side Barplot
 ## Side by Side Barplot 1
 ```{r}
 ggplot(df, aes(   x = Age, 
                  fill = Smoking)) +
   geom_bar( position = "dodge") +
-  ggtitle("Zusammenhand Alter & Rauchen", "Befragte zwischen 15-35 Jahren") +
+  ggtitle("Zusammenhang Alter & Rauchen", "Befragte zwischen 15-35 Jahren") +
   xlab("Alter der Teilnehmer") +
   ylab("Anzahl der Teilnehmer") +
   theme_classic() +
   scale_fill_brewer(palette = "Reds") +
   theme(legend.title = element_blank())
 ```
+Das aktive Rauchen dominiert die 20er Jahre, die meisten Raucher sind um die 20 Jahre alt. 
+Es rauchen fast genauso viele unter 20jährige wie über 20jährige.
+Es haben auch mit 20 die meisten angegeben, dass sie schon einmal das Rauchen probiert haben. Da die 20 jährigen Teilnehmer auch am häufigsten das Rauchen ausprobiert haben sind hier auch die meisten ehemaligen Raucher zu finden.
 
 ## Side by Side Barplot 2
 ```{r}
 ggplot(df, aes(   x = Politics, 
                  fill = Gender)) +
   geom_bar( position = "dodge") +
-  ggtitle("Zusammenhand Geschlecht und Interesse an der Politik", "1(wenig) 5(sehr)") +
+  ggtitle("Zusammenhang Geschlecht und Interesse an der Politik", "1(wenig) 5(sehr)") +
   xlab("Interesse an der Politik") +
   ylab("Anzahl der Teilnehmer") +
   theme_classic() +
   scale_fill_brewer(palette = "Reds") +
   theme(legend.title = element_blank())
 ```
+Die meisten Frauen gaben an, ein geringes mit mittelmäßiges Interesse an Politik zu haben währed die Männer gleich wenig und viel Interesse an der Politik zeigen.
+Allerdings hat eine Mehrheit der Männer eher ein mittelmäßiges Interesse an Politik. 
+Trotzdem sind Männer ein wenig interessierter an Politik als Frauen.
 
 # Boxplot
 ## Boxplot 1
 ```{r}
-ggplot(df, aes( x = Education, # kategoriale Variable
-                  y= df$`Happiness in life`)) + # numerische Variable
+ggplot(df, aes( x = Alcohol, # kategoriale Variable
+                  y= df$`Active sport`)) + # numerische Variable
   geom_boxplot(fill ="pink", position = "dodge") +
-  ggtitle("Zusammenhand Bildung und Glücklischsein", "unglücklich (1) bis sehr glücklich (5)") +
-  xlab("Schulbildung") +
-  ylab("Skala Glücklichsein") +
+  ggtitle("Zusammenhang Alkoholkonsum und Sport", "Sportaktivität 1-5") +
+  xlab("Alkoholkonsum") +
+  ylab("Sportkategorie") +
   theme_classic()
 
 ```
+50% der Teilnehmer, die viel Alkohol trinken befinden sich in der Sportkategorie 1-4, sie treiben also wenig bis viel Sport. Der Median liegt bei 4. 
+Das gleiche gilt für die Teilnehmer, die keinen Alkohol trinken.
+Andere Werte finden sich bei den Social Drinker: der Median liegt bei 3.
 
 ## Boxplot 2
 ```{r}
 ggplot(df, aes( x =Gender, # kategoriale Variable
                   y= df$`Flying`)) + # numerische Variable
   geom_boxplot(fill ="red", position = "dodge") +
-  ggtitle("Zusammenhand Geschlecht und Angst vorm Fliegen", "keine Angst (1) bis große Angst (5)") +
+  ggtitle("Zusammenhang Geschlecht und Angst vorm Fliegen", "keine Angst (1) bis große Angst (5)") +
   xlab("Geschlecht") +
   ylab("Skala Angst vor dem FLiegen") +
   theme_classic()
@@ -187,22 +210,25 @@ ggplot(df, aes( x =Gender, # kategoriale Variable
 ggplot(df, aes( x = God)) +
   geom_histogram(fill ="pink", binwidth = 1, color = "black")+
   facet_wrap(~Lying) +
-  ggtitle("Zusammenhand Glaube und Ehrlichkeit", "Wie viel lügen Gläubige") +
+  ggtitle("Zusammenhang Glaube und Ehrlichkeit", "Wie viel lügen Gläubige") +
   xlab("Glaube an Gott") +
   ylab("Anzahl Teilnehmer, die schon gelogen haben") +
   theme_classic()
 ```
+Gläubige Menschen lügen am häufigsten wenn sie jemanden nicht verletzen wollen oder nur manchmal. Die wenigsten lügen nie.
+
 
 ## Faceted Histogramm 2
 ```{r}
 ggplot(df, aes( x = Health)) +
   geom_histogram(fill ="red", binwidth = 2, color = "darkblue")+
   facet_wrap(~Alcohol) +
-  ggtitle("Zusammenhand Alkohol und Gesundheit", "Ich kümmer mich 1(wenig) 5(sehr) um meine Gesundheit") +
+  ggtitle("Zusammenhang Alkohol und Gesundheit", "Ich kümmere mich 1(wenig) 5(sehr) um meine Gesundheit") +
   xlab("Alkohol") +
   ylab("Anzahl Teilnehmer, die auf Ihre Gesundheit achten ") +
   theme_classic()
 ```
+
 
 # Scatterplot
 ## Scatterplot 1
@@ -215,6 +241,8 @@ ggplot(df, aes( x= Height,
   ylab("Gewicht") +
   theme_classic()
 ```
+Man sieht gut, dass das Gewicht mit der Größe zunimmt.
+Allerdings sind die Daten ab ca. 185cm verstreut und liegen nicht mehr eng beieinander. Wir schließen daraus, dass die meisten Teilnehmer bis ca. 185cm groß ist und die meisten bis zu 80kg wiegen.
 
 ## Scatterplot 2
 ```{r}
@@ -231,7 +259,7 @@ ggplot(df, aes( x= Age,
 ## Line Graph 1
 ```{r}
 df <-     # Speichern des Ergebnisses
-  df %>%  # Nutzung der Daten aus wage
+  df %>%  # Nutzung der Daten aus df
   group_by(Age) %>%  # Gruppierung der Daten nach Alter
   mutate(mean_Gardening = mean(Gardening, na.rm = TRUE)) %>%  # Berechnung Mittelwert pro Gruppe und Erzeugung der neuen Variable mean_wage
   ungroup() # Gruppierung wieder aufheben
@@ -245,6 +273,9 @@ ggplot(df, aes( x = Age,
   ylab("Gartenarbeit") 
   theme_classic()
 ```
+Mittelwerte der Gartenarbeit verteilt auf das Alter:
+der Mittelwert ist bei den 15jährigen Teilnehmern am höchsten, während er in den 20ern die niedrigsten Werte erreicht.
+Ab 25 steigt aber der Mittelwert der Gartenarbeit wieder und man sieht, dass die Teilnehmer gerne im Garten arbeiten.
 
 ## Line Graph 2
 ```{r}
