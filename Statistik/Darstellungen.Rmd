@@ -142,7 +142,8 @@ ggplot(df, aes(   x = Western,
   scale_fill_brewer(palette = "Reds") +
   theme(legend.title = element_blank())
 ```
-
+Raucher und Westernfilmliebhaber:
+Es gibt kaum große Unterschiede zwischen wie gerne man raucht und gleichzeitig Westernfilme liebt. Man kann lediglich erkennen dass mehr Menschen die das Rauchen ausprobiert haben eher weniger Westernfilme mag während Menschen die früher geraucht haben eher Westernfilme interessieren.
 
 # Side by Side Barplot
 ## Side by Side Barplot 1
@@ -203,6 +204,7 @@ ggplot(df, aes( x =Gender, # kategoriale Variable
   ylab("Skala Angst vor dem FLiegen") +
   theme_classic()
 ```
+Beide Geschlechter haben wenig Angst vor dem Fliegen. Man kann erkennen dass Männer noch weniger Angst haben als Frauen da bei ihnen der Median bei 1 statt bei 2 liegt.
 
 # Faceted Histogramm
 ## Faceted Histogramm 1
@@ -228,7 +230,7 @@ ggplot(df, aes( x = Health)) +
   ylab("Anzahl Teilnehmer, die auf Ihre Gesundheit achten ") +
   theme_classic()
 ```
-
+Man kann deutlich erkennen, dass die Social Drinker am meisten auf ihre Gesundheit achten. Jene, die nie Alkohol trinken kümmern sich am wenigsten um ihre Gesundheit.
 
 # Scatterplot
 ## Scatterplot 1
@@ -254,6 +256,7 @@ ggplot(df, aes( x= Age,
   ylab("Sparsam") +
   theme_classic()
 ```
+Man kann erkennen, dass in jedem Alter zwischen 15 und 30 die Menschen gleich sparsam sind. Im Alter von 28 sind die Menschen nicht ganz so sparsam wie sonst, aber man erkennt lediglich einen kleinen Unterschied
 
 # Line Graph
 ## Line Graph 1
@@ -292,4 +295,4 @@ ggplot(df, aes( x =Age,
   ylab("Einsamkeit") 
   theme_classic()
 ```
-
+Man kann erkennen, dass die die jüngsten Teilnehmer am Einsamsten fühlen. dann sinkt die Kurve mit kleinen Anstiegen zwischendrin und geht am Ende wieder hoch. An dem Punkt der 29-Jährigen kann man sehen dass die Teilnehmer kaum bis gar nicht sich einsam fühlen. Zwischen den Jahren 20 und 25 kann man wenig Unterschiede erkennen.
