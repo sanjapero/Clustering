@@ -136,7 +136,9 @@ coverage: 0.1797094	17% der Kunden kaufen eier
 lift: 1.184961	liegt >1 sodass es wahrscheinlich ist dass es zusammen gekauft wird
 
 ##j
-
+Damit man mehr Pommes nach Eiern kauft könne man die Eier strategisch neben den Tiefkühlprodukten lagern und die Pommes in der Tiefkühltruhe nahe an den Eiern platzieren. So fällt den Kunden eher ein, dass sie wenn sie Eier kaufen auch noch Pommes brauchen könnten
+Man könnte neben den Eiern eine Rezeptempfehlung für z.B. Spaghetti Carbonara aufhängen. So könnten die Kunden darauf Lust bekommen und kaufen nachdem sie Eier genommen haben noch Spaghetti dazu.
+Man könnte einen Wasserspender (wie bei DM) neben die Eier platzieren, sodass den Kunden auffällt dass sie noch Mineralwasser kaufen müssen. Wenn der Kunde das Produkt sieht, fällt ihm oft ein, was er noch braucht auch wenn es nicht auf seiner Liste steht.
 
 
 # 3 Visualizing association rules
