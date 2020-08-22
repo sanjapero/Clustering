@@ -16,14 +16,23 @@ knitr::opts_chunk$set(
 # Data preparation
 ## a
 ```{r}
-df <- read.csv("https://raw.githubusercontent.com/kirenz/datasets/master/responses.csv")
+library(readr)
+df <- read_csv("responses.csv")
 df
 ```
+
 ```{r}
 library(tidyr)
 df <- drop_na(df)
 df
 ```
+
+```{r}
+library(tidyverse)
+glimpse(df)
+```
+
+
 ## b
 ```{r}
 library(dplyr)
@@ -32,6 +41,7 @@ df_1 <- select (df, c("Height",
                       "Gender"))
 df_1
 ```
+
 ## c
 ```{r}
 library(ggplot2)
@@ -59,6 +69,8 @@ x_std <- select(x, c("Height_sc",
                      "Weight_sc"))
 x_std
 ```
+
+
 ```{r}
 x <- x_std$Height_sc
 y <- x_std$Weight_sc
@@ -70,7 +82,8 @@ y <- x_std$Weight_sc
 ```
 
 ## e
-um Werte, die sich in unterschiedlichen Wertebereichen befinden, vergleichen zu können muss der Mittelwert auf 0 und die Standardabweichung auf 1 gesetzt werden
+Um Werte, die sich in unterschiedlichen Wertebereichen befinden, vergleichen zu können muss der Mittelwert auf 0 und die Standardabweichung auf 1 gesetzt werden.
+Die Abstände zwischen den Werten machen es sonst unmöglich diese direkt vergleichen zu können. Wir können in unserem Fall erkennen, wie sich die Werte auf den x&y-Achsen deutlich vermindert haben.
 
 # k-Means
 
@@ -83,23 +96,21 @@ x_cluster
 
 ## b
 
-- startet von 8 verschiedenen starting points
-- je höher der starting point desto besser (für ein stabileres resultat)
+Unser Verfahren startet von 8 verschiedenen Starting Points. Denn je höher der Starting Point desto eher können wir ein stabileres Resultat erhalten.
+kMeans läuft nämlich 8 Mal in unserem Fall durch und kann aus diesen 8 Resultaten das beste Ergebnis abliefern.
 
 ## c
 
-- total SS = Summe der quadrierten Abstände jeder Beobachtung zur Gesamtstichprobe 
+total SS = Summe der  Quadrate
+between SS = Summe der quadrierten Abstände der Quadrate
 
-- between SS = Anstatt einen Gesamtstichproben-AVG zu berechnen, berechnen wir einen pro Cluster und berechnen dann die Summe der quadrierten Abstände dieser zwei Mittelwerte zum Gesamt-AVG, wir erhalten zwischen_SS. (Während wir dies berechnen, multiplizieren wir den quadrierten Abstand jedes Durchschnittswertes zum Gesamt-Durchschnittswert mit der Anzahl der Beobachtungen, die er repräsentiert).
-
-60.6% = die totale Varianz im dataset
+60.3% = die totale Varianz im Dataset
 
 ## d
 
 ```{r}
 x_std$gender_kmeans <- as.factor(x_cluster$cluster)
 x_std
-
 ```
 
 ## e
@@ -110,6 +121,11 @@ ggplot(x_std,
   geom_point()
 
 ```
+
+Das Scatterplot wird in die zwei Cluster unterteilt, die hier farbig zum Vorschein kommen. 
+Der Verlauf (Richtung) des Scatterplots ist positiv. 
+Art: linear, da die Werte auf beiden Achsen zunehmen.
+Stärke: geringe Streuung
 
 # Hierarchical Clustering (Ward)
 
@@ -134,13 +150,14 @@ sort(unique(cophenetic(hc)))
 ## b
 ```{r}
 plot (hc)
-
 ```
+
 ```{r}
 plot(hc, hang = -2, cex = 0.6)
 hc$labels <- x_std$Weight_sc
 rect.hclust(hc, k = 2, border = "red")
 ```
+
 ```{r}
 gruppen <- cutree(hc, k = 2) 
 ```
@@ -149,7 +166,6 @@ gruppen <- cutree(hc, k = 2)
 ## d
 ```{r}
 x_std$gender_ward <- gruppen
-
 ```
 
 ## e
@@ -158,24 +174,44 @@ ggplot(x_std,
        aes(Height_sc, Weight_sc, color = gender_ward)) + 
   geom_point()
 ```
+
+Das Scatterplot wird in die zwei Cluster unterteilt, die hier farbig zum Vorschein kommen. 
+Der Verlauf (Richtung) des Scatterplots ist positiv. 
+Art: linear, da die Werte auf beiden Achsen zunehmen.
+Stärke: geringe Streuung der Werte.
+
 # Compare results
 
 ## a
+### 1
 ```{r}
 ggplot(df_1, 
        aes(Height, Weight, color = Gender)) + 
   geom_point()
+```
 
+### 2
+```{r}
 ggplot(df_1, 
        aes(Height, Weight, color = x_std$gender_kmeans)) + 
   geom_point()
+```
 
+### 3
+```{r}
 ggplot(df_1, 
        aes(Height, Weight, color = x_std$gender_ward)) + 
   geom_point()
 ```
 
-- unterschied zwischen kmeans und ward und welche methode für was besser geeignet ist
+K-Means-Clustering ist ein schneller, robuster und einfacher Algorithmus, der zuverlässige Ergebnisse liefert, wenn die Datensätze sich voneinander unterscheiden.Er wird am besten verwendet, wenn die Anzahl der Clusterzentren aufgrund einer gut definierten Liste von Typen, die in den Daten angezeigt werden, spezifiziert ist. Es ist jedoch zu bedenken, dass das K-Means-Clustering möglicherweise nicht gut funktioniert, wenn es z.B. stark überlappende Daten enthält oder diese voller Ausreißer sind.
+k-means eine hervorragende Lösung für das Pre-Clustering, da es den Platz in  kleinere Unterräume reduziert, in denen andere Clustering-Algorithmen angewendet werden können. 
+Ward Methode nutzt keine random Starting Points, das Ergebnis ist also eindeutig und das Verfahren wird meistens dann veerwendet, wenn es keine Ausreißer gibt und die Cluster ungefährt gleich groß sein sollen.
+
+Die Ward Methode hat in unserem Fall mehr Männer erreichen können und hat einen deutlich härteren Cut gemacht als kmeans. kmeans hat die zwei Cluster so unterteilt, dass die größeren Ausreißer der Frauen einfach dem 2. Cluster zugeordnet wurden.
+
+Aufgrund der Menge der Daten und der leichten Cluster Bestimmung tendieren wir zu kmeans, da man bei der kmeans Analyse mehr Frauen Daten visualisert hat.
+
 
 # Finalize data
 ```{r}
