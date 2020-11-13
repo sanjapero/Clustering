@@ -1,0 +1,962 @@
+---
+title: "Problem Set Marketing Analytics"
+author: "Marius Ehrmann & Timo Becker"
+date: "08.08.2020"
+output:
+  html_document:
+    toc: true
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smoth_scroll: true
+    highlight: tango
+    number_sections: false
+    theme: simplex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+```
+
+## 1. Regression I
+#### Daten laden und in Variablen speichern
+```{r}
+auto <- read.csv("auto.csv")
+```
+
+```{r}
+glimpse(auto)
+```
+
+```{r}
+sum(is.na(auto))
+```
+
+```{r}
+auto <- drop_na(auto)
+```
+
+```{r}
+summary(auto)
+```
+
+```{r}
+auto$horsepower <- as.double(auto$horsepower) 
+```
+
+
+#### 1. a. Use the regression function (lm) to perform a linear regression with mpg as the response and horsepower as the predictor. Comment on the output. In particular:
+```{r}
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+```
+
+
+#### Data splitting
+```{r}
+
+set.seed(42) # Important! "TEST SET UND TRAININGS SET"
+
+auto_split <- initial_split(auto)
+auto_train <-  training(auto_split)
+auto_test <- testing(auto_split)
+
+```
+
+```{r}
+set.seed(42)
+
+cv_folds <- 
+  vfold_cv(auto_train,
+           v = 10,
+           strata = mpg,
+           breaks = 4)
+```
+
+```{r}
+ggplot(auto_train, aes(x = horsepower, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+##### 1.a.1. Is there a statistically significant relationship between the predictor and the response?
+```{r}
+lm_auto_train <- lm(formula = mpg~horsepower, data=auto_train)
+summary(lm_auto_train)
+```
+Ja, gibt es. Der p-Wert von 2.2e-16 ist sehr nahe bei 0 und damit sehr klein. Somit gibt es einen signifikanten Zusammenhang zwischen predictor und response (auch zu sehen an den 3*)
+
+***
+- RSE = durchschnittlicher Fehler, den unser Modell macht (4.754 Einheiten), durchschnittliche Abweichung von beta 1
+(- RMSE = 4.754 gibt an, dass die durchschnittliche Distanz der beobachteten Datenpunkte von der Regressionsgerade 4.754 Einheiten (vertikal) beträgt.)
+- Multiple R-squared = Anteil der Veränderung in der abhängigen Variablen, der durch eine Veränderung von der unabhängigen Variablen erklärt werden kann
+- Adjusted R-squared berücksichtigt noch die Modellkomplexität (die Anzahl der Parameter, die noch im Modell verwendet werden)
+- F-Statistik sollte immer größer als 1 sein. 
+--> kann genauso wenig wie RSE alleine genommen interpretiert werden, sondern sollte immer mit anderen Modellen verglichen werden, um Aussagen zu tätigen. Dabei sollte die - F-Statistik so hoch und der RSE so klein wie möglich sein. 
+***
+
+##### 1.a.2. How strong is the relationship between the predictor and the response?
+Das Bestimmtheitsmaß R-squared von lm_auto_train liegt bei 0.6202, was bedeutet, dass mit diesem Modell 62,02% der in den Daten vorkommenden Streuung in mpg von der hp erklärt werden können -> gutes Modell.
+
+
+##### 1.a.3. Is the relationship between the predictor and the response positive or negative?
+negative -> je mehr hp, desto weniger mpg (zu sehen am negativen "horsepower"-Koeffizienten)
+
+
+##### 1.a.4. Provide an interpretation of the coefficients in the model. Describe their meaning in the regression method as well as their specific meaning in this example (i.e. the casual relationship between horsepower and mpg).
+Steigungskoeffizient: -0.159 --> mit jedem hp mehr sinkt mpg um 0.15 Einheiten
+Intercept wäre nicht logisch, da mit 0 PS auch keine mpg möglich sind. 
+
+
+##### 1.a.5. What is the predicted mpg associated with a horsepower of 98?
+```{r}
+predict(lm_auto_train,data.frame(horsepower=c(98)),interval="prediction")
+```
+
+The predicted mpg associated with a “horsepower” of 98 is about 24.38.
+We are 95% confident that the mpg of a car with horsepower of 98 is between 15.01 to 33.76.
+
+
+##### 1.a.6. What is the root mean squared error (RMSE) of your model? Give an interpretation of the finding.
+```{r}
+lm_results <- 
+  lm_spec %>% 
+  fit_resamples(
+    mpg ~ horsepower,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+lm_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der mean-RMSE liegt bei 4.725, d.h., die tatsächlichen mpg unterscheiden sich im Durchschnitt um 4.725 Einheiten von den Vorhersagen der Regression.
+
+
+#### 1.b. Plot the response and the predictor. Display the least squares regression line.
+```{r}
+plot(auto_train$horsepower, auto_train$mpg, main = "Scatterplot of mpg vs. horsepower", xlab = "horsepower", ylab = "mpg", col = "blue")
+abline(lm_auto_train, lwd = 2, lty = 1, col = "red")
+```
+
+
+#### 1.c. Use a boosted decision tree to perform a regression with mpg as the response and horsepower as the predictor.
+```{r}
+#install.packages("xgboost")
+library(parsnip)
+```
+
+
+#### Boosted Tree Model Specification
+```{r}
+bt_model <- 
+  boost_tree() %>%
+  set_engine("xgboost") %>% 
+  set_mode("regression")
+```
+
+```{r}
+bt_model_fit <-
+  bt_model %>% 
+  fit(mpg ~ horsepower, data = auto_train)
+```
+
+
+##### 1.c.1. What is the predicted mpg associated with a horsepower of 98? 
+```{r}
+predict(bt_model_fit,data.frame(horsepower=c(98)))
+```
+Bei horsepower von 98 sagt das Modell einen Wert von 20.16 mpg voraus.
+
+
+##### 1.c.2. What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
+```{r}
+bt_results <- 
+  bt_model %>% 
+  fit_resamples(
+    mpg ~ horsepower,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+bt_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der RMSE liegt bei 4.328, d.h. die tatsächlichen mpg unterscheiden sich im Durchschnitt um 4.328 Einheiten von den Vorhersagen des Boosted Tree Models. Dieser Wert ist deutlich unter dem der linearen Regression von 4.725, weshalb in diesem Fall das Boosted Decision Tree Model verwendet werden sollte.
+
+
+
+## 2. Regression II
+
+#### Data splitting
+```{r}
+
+set.seed(42) # Important! "TEST SET UND TRAININGS SET"
+
+auto_split <- initial_split(auto)
+auto_train <-  training(auto_split)
+auto_test <- testing(auto_split)
+
+```
+
+```{r}
+set.seed(42)
+
+cv_folds <-
+ vfold_cv(auto_train,
+           v = 10,
+           strata = mpg,
+           breaks = 4) 
+
+```
+
+
+#### 2.a. Produce scatterplots to analyze the relationships between the variables in the data set. Interpret the findings.
+```{r}
+pairs(~ mpg+cylinders+displacement+horsepower+weight+acceleration+year+origin, auto_train)
+```
+Findings:
+- je mehr cylinders, desto weniger Reichweite (mpg)
+- je mehr horsepower, desto mehr weight
+- je mehr horsepower, desto mehr displacement (Hubraum)
+- je mehr horsepower, desto geringer die Zeit auf 60mph (acceleration)
+- je jünger das Auto (year), desto höher die Reichweite (mpg)
+- origin und year haben keine Korrelation
+
+
+```{r}
+ggplot(auto_train, aes(x = cylinders, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+#### 2.b. Compute the correlations between all variables. You will need to exclude the name variable, which is qualitative. Comment on your findings.
+```{r}
+cor(auto_train[, !(names(auto_train)=="name")])
+#cor(subset(auto_train, select= c(-name, -origin)))
+```
+
+displacement + cylinder sind stark voneinander abhängig (0.9500259)
+displacement + weight sind stark voneinander abhängig (0.9257176)
+year und origin sind Angaben, die tendenziell vernachlässigt werden können, da sehr geringe Korrelation zu anderen Angaben
+Die größten Zusammenhänge bestehen zwischen den Variablen mpg, cylinders, displacement, hp und weight untereinander
+
+
+#### 2.c. Perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. In particular:
+```{r}
+mlr <- lm(mpg ~ .-name, auto_train)
+summary(mlr)
+```
+
+##### 2.c.1. Is there a relationship between the predictors and the response? 
+Yes, the F-statistic is highly significant with a very small p-value.
+
+
+##### 2.c.2. Which predictors appear to have a statistically significant relationship to the response?
+Checking the p-values associated with each predictor’s t-statistic. “displacement”, “weight”, “year”, and “origin” have a statistically significant relationship while “cylinders”, “horsepower” and “acceleration” do not.
+
+
+##### 2.c.3. What does the coefficient for the year variable suggest?
+It suggests that, for each additional year, more 0.775 miles per gallon is possible.
+The coefficient of the “year” variable suggests that the average effect of an increase of 1 year is an increase of 0.7752 in “mpg”. In other words, cars become more fuel efficient every year by 0.77 mpg / year.
+
+
+##### 2.c.4. What is the predicted mpg associated with a horsepower of 98?
+```{r}
+predict(mlr, data.frame(cylinders=c(8), displacement=(225), horsepower=c(98), weight=c(3086), acceleration=c(14), year=c(82), origin=c(2), name=c("vw pickup")),interval="prediction")
+```
+Bei horsepower von 98 sagt das Modell einen Wert von 26.35 mpg voraus.
+Regression bei Origin wenig sinnvoll, da ordinalskaliert: 1,2,3. Keine Aussagekraft.
+
+Testing with a real dataset of 98hp with a real mpg of 22
+```{r}
+predict(mlr, data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")),interval="prediction")
+```
+
+
+##### 2.c.5. What is the root mean squared error (MSE) of your model?
+```{r}
+lm_results_2 <- 
+  lm_spec %>% 
+  fit_resamples(
+    mpg ~ .-name,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+lm_results_2 %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der mean-RMSE liegt bei 3.171, d.h., die tatsächlichen mpg unterscheiden sich im Durchschnitt um 3.171 Einheiten von den Vorhersagen der Regression.
+
+
+#### 2.d. Use a boosted decision tree to perform a regression with mpg as the response and all other variables except name as the predictors.
+```{r}
+bt_model_fit_2 <-
+  bt_model %>% 
+  fit(mpg ~ .-name, data = auto_train)
+```
+
+
+##### 2.d.1. What is the predicted mpg associated with a horsepower of 98?
+```{r}
+predict(bt_model_fit_2,data.frame(cylinders=c(8), displacement=(225), horsepower=c(98), weight=c(3086), acceleration=c(14), year=c(82), origin=c(2), name=c("vw pickup")))
+```
+Bei horsepower von 98 sagt das Modell einen Wert von 20.39 mpg voraus.
+
+
+Testing with a real dataset of 98hp with a real mpg of 22:
+```{r}
+predict(bt_model_fit_2,data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")))
+```
+
+
+Erkenntnis:
+Boosted Tree Modell ist präziser in der Vorhersage (zu sehen anhand des realen Datensatzes). Bei eigentlichen 22mpg erreicht das Boosted Tree Decision Modell eine bessere Vorhersage mit 21.43 anstelle von 23.52 mit der multiplen linearen Regression.
+
+
+##### 2.d.2. What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
+```{r}
+bt_results_2 <- 
+  bt_model %>% 
+  fit_resamples(
+    mpg ~ .-name,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+bt_results_2 %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der RMSE sagt aus wie gut eine Funktion(skurve) an die Daten angepasst ist. Er sagt aus um wie viel im Durchschnitt die Schätzung von der Messung abweicht.
+Spannweite des Datensatzes: 9 bis 42
+RMSE beim linearen Modell bei 3.17 im Gegensatz zum RMSE beim Boosted Tree Model mit 2.76. D.h. die Abweichung mit dem Boosted Tree Model ist geringer und somit präziser, daher sollte auch dieses Modell verwendet werden. 
+
+Rsq liegt bei 0.887, d.h. dass mit diesem Modell 88.7% der in den Daten vorkommenden Streuung in mpg mit den anderen Daten erklären können -> gutes Modell.
+
+
+
+## 3. Sales analysis
+#### 3.a. Fit a multiple regression model to predict Sales using Price, Urban, and US. Use training and test data.
+#### Daten laden und in Variablen speichern
+```{r}
+carseats <- read.csv("Carseats.csv")
+```
+
+```{r}
+carseats_df <- carseats
+glimpse(carseats_df)
+```
+
+```{r}
+sum(is.na(carseats_df))
+```
+
+#### Data splitting
+```{r}
+
+set.seed(42) # Important! "TEST SET UND TRAININGS SET"
+
+carseats_split <- initial_split(carseats_df)
+carseats_train <-  training(carseats_split)
+carseats_test <- testing(carseats_split)
+
+```
+
+```{r}
+set.seed(42)
+
+cv_folds_seats <- 
+  vfold_cv(carseats_train,
+           v = 10,
+           breaks = 4)
+```
+
+
+#### Multiple regression model
+```{r}
+mlr_seats <- lm(Sales ~ Price + Urban + US, data = carseats_train)
+summary(mlr_seats)
+```
+
+
+#### 3.b. Provide an interpretation of each coefficient in the model. Be careful — some of the variables in the model are qualitative!
+Price: Es besteht ein Zusammenhang zwischen Price und Sales, da der p-Wert der t-Statistik sehr gering ist. Der Koeffizient sagt aus, dass der Zusammenhang negativ ist, wenn also der Price steigt, sinkt Sales.
+
+UrbanYes: Hier scheint es, dass es keinen Zusammenhang gibt zwischen der örtlichen Begebenheit des Stores und den Sales-Zahlen. Hier wird die Nullhypothese also beibehalten.
+
+USYes: Lässt vermuten, dass es einen Zusammenhang gibt zwischen den Verkaufszahlen und ob der Store in den US ist oder nicht. Der Zusammenhang ist positiv, d.h. wenn der Store in den US ist, dann steigert das den Verkauf um 1330 Einheiten 
+
+
+#### 3.c. For which of the predictors can you reject the null hypothesis H0 : βj = 0?
+Für Price und USYes
+
+
+#### 3.d. Fit a smaller model
+On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome (i.e. update your model).
+```{r}
+mlr_seats2 <- lm(Sales ~ Price + US, data = carseats_train)
+summary(mlr_seats2)
+```
+
+
+#### 3.e. How well do the models in a. and d. fit the data?
+In a liegt der RSE bei 2.475, in d bei 2.472, d.h. das Modell in d macht einen durschnittlichen geringeren Fehler bei den Vorhersagen der Regression. 
+
+Der R-squared bei a liegt bei 0.2715 und bei d bei 0.2708, was bedeutet, dass bei beiden Modellen nur ca. 27% der Streuung der Sales-Werte durch Price und USYes (plus UrbanYes) erklärt werden können.
+
+
+```{r}
+lm_seats_results <- 
+  lm_spec %>% 
+  fit_resamples(
+    Sales ~ Price + Urban + US,
+    resamples = cv_folds_seats
+    )
+```
+
+```{r}
+lm_seats_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+#### 3.f. Use a boosted decision tree to perform the regression in a.
+```{r}
+bt_model_fit_seats <-
+  bt_model %>% 
+  fit(Sales ~ Price + Urban + US, data = carseats_train)
+```
+
+
+##### 3.f.1. What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
+```{r}
+bt_results_seats <- 
+  bt_model %>% 
+  fit_resamples(
+    Sales ~ Price + Urban + US,
+    resamples = cv_folds_seats
+    )
+```
+
+```{r}
+bt_results_seats %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+RMSE liegt bei 2.657 im Vgl. zum RMSE des linear regression model von 2.492. D.h. das linear model ist hier präziser und sollte angewendet werden.
+R-squared liegt im Vgl zum linearen Modell nur noch bei 0.204, d.h. dass sogar noch weniger der Sales erklärt werden können. 
+
+
+
+## 4. Gender analysis
+#### Daten laden und in Variablen speichern
+```{r}
+responses <- read.csv("responses.csv", na.strings = c("", "NA"))
+df_responses <- responses
+glimpse(df_responses)
+```
+
+```{r}
+df_responses <- drop_na(df_responses)
+```
+
+```{r}
+sum(is.na(df_responses))
+```
+
+```{r}
+typeof(df_responses$Gender)
+```
+
+
+#### 4.1 Data exploration
+Gewählte Variablen (Vermutungen):
+- Musicals, da Frauen gerne ein Musical sehen.
+- Horrorfilme, da Männer lieber einen Horror Film sehen.
+- Cars, da Männer durchschnittlich eine höhere Präferenz haben, Autos zu mögen.
+- Shopping, da Frauen durchschnittlich eine Präferenz haben, shoppen gehen.
+- Pets, da wahrscheinlich eher Frauen Haustiere haben.
+
+
+```{r}
+ggplot(df_responses, aes(x=Musical, color=Gender)) +
+  geom_boxplot()
+```
+
+Findings: 
+Männer haben eine im Durchschnitt geringere Vorliebe für Musicals im Vergleich zu Frauen. Im Vergleich sieht man, dass Männer im Durchschnitt (Median) die Ausprägung 2 bei Musicals wählen, Frauen die Ausprägung 3.
+
+
+
+```{r}
+ggplot(df_responses, aes(x=Horror, color=Gender)) +
+  geom_boxplot()
+```
+
+Findings: 
+Wir sehen in dem Schaubild, dass Männer im Median eher einen Horrorfilm anschauen (Ausprägung 3) im Vgl. zu Frauen, die im Median weniger stark einen Horrorfilm präferieren (Ausprägung 2).
+
+
+
+```{r}
+ggplot(df_responses, aes(x=Cars, color=Gender))+
+  geom_boxplot()
+```
+
+Findings: In dem Schaubild wird ersichtlich, dass Männer eine stärkere Ausprägung bei der Vorliebe für Autos haben als Frauen. 
+Der Median bei Männern liegt bei 4, was eine starke Präferenz für Autos zeigt. Frauen liegen im Median bei der Vorliebe für Autos bei 2, was eher für eine geringe Auto-Liebe spricht. Dennoch lässt sich keine genaue Aussage ausschließlich auf dieser Variable basierend treffen, da das 1. Quartil (Boden der Box) bei den Männern bei 2 liegt. Bedeutet: Es gibt durchaus Männer, die keine große Vorliebe für Autos besitzen. 
+
+Bei Frauen kann man auch nicht ausschließlich davon sprechen, dass sie keine Vorliebe für Autos haben: Betrachtet man das obere Quartil, liegt dieses bei 3 - das bedeutet, dass 75 % der Werte die Ausprägung 3 oder weniger haben. Diese Variable alleine wird uns nicht weiterhelfen, der Median gibt aber eine gute Tendenz vor. Deshalb brauchen wir weitere Einblicke.
+
+
+
+```{r}
+ggplot(df_responses, aes(x=Shopping, color=Gender))+
+  geom_boxplot()
+```
+
+Findings: In diesem Schaubild können wir weitere Frauen und Männer identifizieren. Bei der Vorliebe shoppen zu gehen, sehen wir bei den Frauen im Median eine erhöhte Vorliebe mit der Ausprägung 4.
+Männer haben eher eine leicht zurückhaltende Tendenz shoppen zu mögen, mit einer Ausprägung von 2.
+
+
+
+```{r}
+ggplot(df_responses, aes(x=Pets, color=Gender))+
+  geom_boxplot()
+```
+
+Findings:
+Frauen haben eine erhöhte Vorliebe für Pets (Median = 4) im Vgl. zu Männern mit Median = 3. 
+IQA bei Frauen höher.
+
+
+
+#### 4.2 Fit models
+##### Fit two models with (at least four) predictor variables of your choice.
+
+```{r}
+df_responses$Gender <- as.factor(df_responses$Gender)
+```
+
+```{r}
+df_gender <- subset(df_responses, select=c(Gender, Musical, Horror, Cars, Shopping, Pets))
+glimpse(df_gender)
+```
+
+```{r}
+set.seed(42) # Important! "TEST SET UND TRAININGS SET"
+
+gender_split <- initial_split(df_gender)
+gender_train <- training(gender_split)
+gender_test <- testing(gender_split)
+```
+
+```{r}
+set.seed(42)
+
+cv_folds_gender_train <- 
+  vfold_cv(gender_train,
+           v = 10,
+           breaks = 4)
+```
+
+
+##### Create Recipe
+```{r}
+gender_rec <- 
+  recipe(Gender ~ ., 
+         data = gender_train)
+
+summary(gender_rec)
+```
+
+
+#### Model 1
+##### Boosted Tree Model Specification
+```{r}
+bt_model_class <- 
+  boost_tree() %>%
+  set_engine("xgboost") %>% 
+  set_mode("classification")
+```
+
+
+##### Pair models and recipes
+```{r}
+gender_wflow_bt_model <-
+  workflow() %>% 
+  add_model(bt_model_class) %>% 
+  add_recipe(gender_rec)
+
+gender_wflow_bt_model
+```
+
+
+##### Train models
+```{r}
+gender_fit_bt_model <-
+  gender_wflow_bt_model %>% 
+  fit(data = gender_train)
+```
+
+```{r}
+bt_results_class <- 
+  bt_model_class %>% 
+  fit_resamples(
+    Gender ~ .,
+    resamples = cv_folds_gender_train
+    )
+```
+
+```{r}
+bt_results_class %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+#### Model 2
+##### Classification Model Specification
+```{r}
+log_gender <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification") 
+```
+
+
+##### Pair models and recipes
+```{r}
+gender_wflow_log_model <-
+  workflow() %>% 
+  add_model(log_gender) %>% 
+  add_recipe(gender_rec)
+
+gender_wflow_log_model
+```
+
+
+##### Train models
+```{r}
+gender_fit_log_model <-
+  gender_wflow_log_model %>% 
+  fit(data = gender_train)
+```
+
+```{r}
+results_log_gender <- 
+  log_gender %>%
+  fit_resamples(
+    Gender ~.,
+    resamples = cv_folds_gender_train
+  )
+```
+
+```{r}
+results_log_gender %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+#### 4.3 Update models
+Now that you see the results of the models, explain whether you would recommend to exclude predictor variables from your models. Update your models if necessary.
+Kein Update, da Werte sehr ähnlich nach Entfernung der Variablen "Horror", hier dachten wir, es könnte eine größere Veränderung in den Werten geben. 
+
+
+#### 4.4 Predictions
+Use your (updated) models and predict the probability that a respondent is male or female. Classify a respondent as female (with label ‘female’) if the predicted probability exceeds:
+- c1): 0.4 (i.e. threshold = 0.4) 
+- c2): 0.5 (i.e. threshold = 0.5)
+- c3): 0.7 (i.e. threshold = 0.7). 
+
+Um aus den vorhergesagten Wahrscheinlichkeiten eine ja/nein Aussage zu gewinnen, muss ein Schwellenwert (Trennwert, Grenzwert, threshold value) festgesetzt werden: Wahrscheinlichkeiten unter diesem Wert werden der einen Kategorie zugeordnet, predicted values, die darüber liegen, der anderen Kategorie. Die Wahl des Grenzwertes ist dem Anwender überlassen. Die Festsetzung des Grenzwertes führt dazu, dass die predicted values in eine dichotome Variable überführt werden.
+
+
+#### Model 1 (Boosted Tree): Predictions mit Testdaten
+```{r}
+gender_pred_1 <- 
+  predict(gender_fit_bt_model, 
+          gender_test, 
+          type = "prob")
+```
+
+```{r}
+gender_pred_1
+```
+
+
+- c1): 0.4 (i.e. threshold = 0.4)
+That means all model predictions with a probability greater than 40% get labeled as being females.
+```{r}
+threshold_04_bt <- 
+  gender_pred_1 %>% 
+  mutate(thres_04_bt = ifelse(.pred_female > 0.4, "female", "male"),
+        thres_04_bt = as.factor(thres_04_bt))
+
+threshold_04_bt
+```
+
+
+- c2): 0.5 (i.e. threshold = 0.5)
+That means all model predictions with a probability greater than 50% get labeled as being females.
+```{r}
+threshold_05_bt <- 
+  gender_pred_1 %>% 
+  mutate(thres_05_bt = ifelse(.pred_female > 0.5, "female", "male"),
+        thres_05_bt = as.factor(thres_05_bt))
+
+threshold_05_bt
+```
+
+
+- c3): 0.7 (i.e. threshold = 0.7)
+That means all model predictions with a probability greater than 70% get labeled as being females.
+```{r}
+threshold_07_bt <- 
+  gender_pred_1 %>% 
+  mutate(thres_07_bt = ifelse(.pred_female > 0.7, "female", "male"),
+        thres_07_bt = as.factor(thres_07_bt))
+
+threshold_07_bt
+```
+
+
+
+#### Model 2 (Log Reg Class): Predictions mit Testdaten
+```{r}
+gender_pred_2 <- 
+  predict(gender_fit_log_model, 
+          gender_test, 
+          type = "prob")
+```
+
+```{r}
+gender_pred_2
+```
+
+
+- c1): 0.4 (i.e. threshold = 0.4)
+That means all model predictions with a probability greater than 40% get labeled as being females.
+```{r}
+threshold_04_log <- 
+  gender_pred_2 %>% 
+  mutate(thres_04 = ifelse(.pred_female > 0.4, "female", "male"),
+        thres_04 = as.factor(thres_04))
+
+threshold_04_log
+```
+
+
+- c2): 0.5 (i.e. threshold = 0.5)
+That means all model predictions with a probability greater than 50% get labeled as being females.
+```{r}
+threshold_05_log <- 
+  gender_pred_2 %>% 
+  mutate(thres_05 = ifelse(.pred_female > 0.5, "female", "male"),
+        thres_05 = as.factor(thres_05))
+
+threshold_05_log
+```
+
+
+- c3): 0.7 (i.e. threshold = 0.7)
+That means all model predictions with a probability greater than 70% get labeled as being females.
+```{r}
+threshold_07_log <- 
+  gender_pred_2 %>% 
+  mutate(thres_07 = ifelse(.pred_female > 0.7, "female", "male"),
+        thres_07 = as.factor(thres_07))
+
+threshold_07_log
+```
+
+
+#### 4.5 Confusion matrix & metrics
+
+##### 4.5.a. Compute the confusion matrix for every threshold (c1), c2) and c3)) in order to determine how many observations were correctly or incorrectly classified (use the test data) by the two models.
+
+```{r}
+#install.packages("caret")
+#install.packages("e1071")
+#install.packages("MLmetrics")
+library(caret)
+library(e1071)
+library(MLmetrics)
+```
+
+Classification: Predicted/Reality
+von 168 rows
+
+
+##### Model 1 (Boosted Tree):
+Confusion Matrix, threshold = 0.4
+```{r}
+confusionMatrix(threshold_04_bt$thres_04_bt, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.5
+```{r}
+confusionMatrix(threshold_05_bt$thres_05_bt, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.7
+```{r}
+confusionMatrix(threshold_07_bt$thres_07_bt, gender_test$Gender)
+```
+
+
+##### Model 2 (Log Reg Class):
+
+Confusion Matrix, threshold = 0.4
+```{r}
+confusionMatrix(threshold_04_log$thres_04, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.5
+```{r}
+confusionMatrix(threshold_05_log$thres_05, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.7
+```{r}
+confusionMatrix(threshold_07_log$thres_07, gender_test$Gender)
+```
+
+##### 4.5.b. Calculate the following metrics for your test data: 
+“Accuracy”, Precision" (what proportion of positive identifications was actually correct?), “Recall” (what proportion of actual positives was identified correctly) and the F1 score (measure of a test’s accuracy) for the thresholds in c1), c2) and c3). Which threshold would you recommend? Explain your choice.
+
+Classification: Predicted/Reality
+
+
+##### Accuracy
+siehe Confusion Matrix
+
+
+##### Precision
+Anteil korrekter Vorhersagen an positiven Identifikationen  (pro Reihe female)
+Precision erlaubt eine Einordnung der Genauigkeit in Hinblick auf falsch positive Ergebnisse eines Classifiers. Falsch negative Ergebnisse bleiben außen vor.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+prec = (76)/(76+10)
+prec
+```
+Ergebnis ist unter "Pos Pred Value" in der Confusion Matrix zu sehen.
+
+
+##### Recall
+Anteil an tatsächlichen positiven war korrekt vorhergesagt (true positive und false positive) (pro Spalte female)
+Der Recall-Score erlaubt die Einordnung der Ergebnisse in Hinblick auf die Rate von falsch negativen Klassifikationen eines Classifiers.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+recall = (76)/(76+27)
+recall
+```
+Ergebnis ist unter "Sensitivity" in der Confusion Matrix zu sehen.
+
+
+##### F1-Score
+Is defined as the harmonic mean (or a weighted average) of precision and recall.
+Er ermöglicht es, die Gesamtgenauigkeit der Vorhersagen eines Classifiers zu beschreiben.
+Ein Mittelwert zwischen Recall und Precision ergibt durchaus Sinn, um die allgemeine Genauigkeit einer Anwendung oder eines Classifiers zu bewerten.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+f1 = (2 * prec * recall) / (prec + recall) 
+f1
+```
+oder einfacher:
+
+
+##### F1-Score, Model 1 (Boosted Tree):
+Threshold = 0.4
+```{r}
+F1_Score(threshold_04_bt$thres_04_bt, gender_test$Gender)
+```
+
+
+Threshold = 0.5
+```{r}
+F1_Score(threshold_05_bt$thres_05_bt, gender_test$Gender)
+```
+
+
+Threshold = 0.7
+```{r}
+F1_Score(threshold_07_bt$thres_07_bt, gender_test$Gender)
+```
+
+
+##### F1-Score, Model 2 (Log Reg Class):
+Threshold = 0.4
+```{r}
+F1_Score(threshold_04_log$thres_04, gender_test$Gender)
+```
+
+
+Threshold = 0.5
+```{r}
+F1_Score(threshold_05_log$thres_05, gender_test$Gender)
+```
+
+
+Threshold = 0.7
+```{r}
+F1_Score(threshold_07_log$thres_07, gender_test$Gender)
+```
+
+
+##### Recommendation
+Auf Grundlage aller Daten (Accuracy und F1-Score) empfehlen wir die Nutzung des Threshold von 0.5
+
+
+
+##### 4.5.c. Display the ROC-curve for the two models and comment on the findings.
+
+##### Model 1 (Boosted Tree):
+```{r}
+gender_pred_1 %>% 
+  roc_curve(truth=gender_test$Gender, .pred_female) %>% 
+  autoplot()
+```
+
+```{r}
+gender_pred_1 %>% 
+  roc_auc(truth=gender_test$Gender, .pred_female)
+```
+
+
+##### Model 2 (Log Reg Class):
+```{r}
+gender_pred_2 %>% 
+  roc_curve(truth=gender_test$Gender, .pred_female) %>% 
+  autoplot()
+```
+
+```{r}
+gender_pred_2 %>% 
+  roc_auc(truth=gender_test$Gender, .pred_female)
+```
+
+
+Findings:
+Je mehr sich die ROC curve des statistischen Modells von der Winkelhalbierenden unterscheidet, um so zuverlässiger und besser sagt das Modell die beobachteten Werte vorher.
+Kurven und Werte unterscheiden sich minimal, sind aber beides gute Modelle mit jeweils Werten von über 0.85.
