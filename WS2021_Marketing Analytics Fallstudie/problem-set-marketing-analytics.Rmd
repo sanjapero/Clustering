@@ -15,5 +15,576 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
 ```
+
+
+# 3. Sales analysis
+## 3.a. Fit a multiple regression model to predict Sales using Price, Urban, and US. Use training and test data.
+### Data preparation
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+carseats <- read.csv("carseats.csv")
+glimpse(carseats)
+```
+
+```{r}
+drop_na(carseats)
+```
+
+### Data splitting
+```{r}
+
+set.seed(42) 
+
+carseats_split <- initial_split(carseats)
+carseats_train <-  training(carseats_split)
+carseats_test <- testing(carseats_split)
+
+cv_folds <- 
+  vfold_cv(carseats_train,
+           v = 10,
+           breaks = 4)
+```
+
+
+### Multiple regression model
+```{r}
+mrm_carseats <- lm(Sales ~ Price + Urban + US, data = carseats_train)
+summary(mrm_carseats)
+```
+
+
+### 3.b. Provide an interpretation of each coefficient in the model. Be careful — some of the variables in the model are qualitative!
+Price: erhöht sich der Preis kommt es zu einem Rückgang der Sales um 54,45 Einheiten.
+Urban: durchschnittliche Verkauf von Einheiten in städtischen Gebieten um 165,97 Einheiten geringer ist als in ländlichen Gebieten
+US: in einem US-Geschäft werden durchschnittlich 1329,56 Einheiten mehr verkauft  als in einem Nicht-US-Geschäft.
+
+### 3.c. For which of the predictors can you reject the null hypothesis H0 : βj = 0?
+Price
+US
+
+### 3.d. Fit a smaller model: On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome (i.e. update your model).
+```{r}
+mrm_carseats_ <- lm(Sales ~ Price + US, data = carseats_train)
+summary(mrm_carseats_ )
+```
+
+
+### 3.e. How well do the models in a. and d. fit the data?
+Eigentlich sind sie in etwa gleich, da der RSE bei unserem neuen Model nur minimal besser abschneidet --> gernigere Fehlerquote bei der Regression. Der R-squared liegt ebenfalls bei beiden bei ca. 27% --> nur dieser Anteil der Streuung der Sales Werte wird durch die Predictors beeinflusst. 
+
+```{r}
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+
+lm_seats_results <- 
+  lm_spec %>%
+  fit_resamples(
+    Sales ~ Price + Urban + US,
+    resamples = cv_folds_seats
+    )
+
+lm_seats_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+### 3.f. Use a boosted decision tree to perform the regression in a.
+```{r}
+bt_model <- 
+  boost_tree() %>%
+  set_engine("xgboost") %>% 
+  set_mode("regression")
+
+bdt_carseats <-
+  bt_model %>% 
+  fit(Sales ~ Price + Urban + US, data = carseats_train)
+```
+
+
+#### 3.f.1. What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
+```{r}
+bt_results_seats <- 
+  bt_model %>% 
+  fit_resamples(
+    Sales ~ Price + Urban + US,
+    resamples = cv_folds_seats
+    )
+
+bt_results_seats %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+RMSE liegt bei 2.657 im Vgl. zum RMSE des linear regression model von 2.492. D.h. das linear model ist hier präziser und sollte angewendet werden.
+R-squared liegt im Vgl zum linearen Modell nur noch bei 0.204, d.h. dass sogar noch weniger der Sales erklärt werden können. 
+
+
+# 4. Gender analysis
+## Data preparation
+```{r}
+responses_df <- read.csv("responses.csv", na.strings = c("", "NA"))
+responses_df <- drop_na(responses)
+responses_df
+```
+
+
+### 4.1 Data exploration
+
+```{r}
+ggplot(responses_df, aes(x=Gender)) +
+  geom_bar(position = "dodge", fill= "darkgreen")+
+  facet_wrap(~ responses_df$Romantic)
+```
+
+Frauen haben im Schnitt eine höhere Tendenz zu romatnischen Filmen als Männer.
+
+
+```{r}
+ggplot(responses_df, aes(x=Gender)) +
+  geom_bar(position = "dodge", fill= "lightblue")+
+  facet_wrap(~ responses_df$War)
+```
+
+Männer schauen sich im Schnitt eher Kriegsfilme an als Frauen.
+
+
+```{r}
+ggplot(responses_df, aes(x=Gender)) +
+  geom_bar(position = "dodge", fill= "darkred")+
+  facet_wrap(~ responses_df$Science.and.technology)
+```
+
+Ein besonders hohes Interesse besteht tatsächlich nur bei Männern, während Frauen eher ein mittleres bus gar kein Interesse daran haben.
+
+
+
+```{r}
+ggplot(responses_df, aes(x=Gender)) +
+  geom_bar(position = "dodge", fill= "purple")+
+  facet_wrap(~ responses_df$Dancing)
+```
+Man kann erkennen, dass Männer tatsächlich eher abgeneigt sich zu tanzen als Frauen. Besonders im Bereich "1" sind viele Männer.
+
+
+
+# 4.2 Fit models
+## Fit two models with (at least four) predictor variables of your choice.
+
+```{r}
+responses_df$Gender <- as.factor(responses_df$Gender)
+```
+
+```{r}
+df_gender <- subset(responses_df, select=c(Gender, Romantic, War, Science.and.technology, Däancing))
+
+```
+
+```{r}
+set.seed(42) 
+
+gender_split <- initial_split(df_gender)
+gender_train <- training(gender_split)
+gender_test <- testing(gender_split)
+
+set.seed(42)
+
+cv_folds_gender <- 
+  vfold_cv(gender_train,
+           v = 10,
+           breaks = 4)
+```
+
+```{r}
+library(skimr)  
+```
+
+## Create Recipe
+```{r}
+gender_rec <- 
+  recipe(Gender ~ ., 
+         data = gender_train)
+
+summary(gender_rec)
+```
+
+
+### Model 1
+#### Boosted Desicion Tree Definition
+```{r}
+bt_model_class <- 
+  boost_tree() %>%
+  set_engine("xgboost") %>% 
+  set_mode("classification")
+```
+
+
+#### Pair models and recipes
+```{r}
+gender_wflow_bt_model <-
+  workflow() %>% 
+  add_model(bt_model_class) %>% 
+  add_recipe(gender_rec)
+
+gender_wflow_bt_model
+```
+
+
+#### Train models
+```{r}
+gender_fit_bt_model <-
+  gender_wflow_bt_model %>% 
+  fit(data = gender_train)
+```
+
+```{r}
+bt_results_class <- 
+  bt_model_class %>% 
+  fit_resamples(
+    Gender ~ .,
+    resamples = cv_folds_gender
+    )
+```
+
+```{r}
+bt_results_class %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+### Model 2
+#### Linerae Regression
+```{r}
+lr_gender <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification") 
+```
+
+
+##### Pair models and recipes
+```{r}
+gender_wflow_lr_model <-
+  workflow() %>% 
+  add_model(lr_gender) %>% 
+  add_recipe(gender_rec)
+
+gender_wflow_lr_model
+```
+
+
+##### Train models
+```{r}
+gender_fit_lr_model <-
+  gender_wflow_lr_model %>% 
+  fit(data = gender_train)
+```
+
+```{r}
+results_lr_gender <- 
+  lr_gender %>%
+  fit_resamples(
+    Gender ~.,
+    resamples = cv_folds_gender
+  )
+```
+
+```{r}
+results_lr_gender %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+
+#### 4.3 Update models
+Now that you see the results of the models, explain whether you would recommend to exclude predictor variables from your models. Update your models if necessary.
+
+Kein Update, da Werte sehr ähnlich nach Entfernung der Variablen "Horror", hier dachten wir, es könnte eine größere Veränderung in den Werten geben. 
+
+
+#### 4.4 Predictions
+Use your (updated) models and predict the probability that a respondent is male or female. Classify a respondent as female (with label ‘female’) if the predicted probability exceeds:
+- c1): 0.4 (i.e. threshold = 0.4) 
+- c2): 0.5 (i.e. threshold = 0.5)
+- c3): 0.7 (i.e. threshold = 0.7). 
+
+Um aus den vorhergesagten Wahrscheinlichkeiten eine ja/nein Aussage zu gewinnen, muss ein Schwellenwert (Trennwert, Grenzwert, threshold value) festgesetzt werden: Wahrscheinlichkeiten unter diesem Wert werden der einen Kategorie zugeordnet, predicted values, die darüber liegen, der anderen Kategorie. Die Wahl des Grenzwertes ist dem Anwender überlassen. Die Festsetzung des Grenzwertes führt dazu, dass die predicted values in eine dichotome Variable überführt werden.
+
+
+#### Model 1 (Boosted Tree): Predictions mit Testdaten
+```{r}
+gender_pred_bt <- 
+  predict(gender_fit_bt_model, 
+          gender_test, 
+          type = "prob")
+```
+
+```{r}
+gender_pred_bt
+```
+
+
+- c1): 0.4 (i.e. threshold = 0.4)
+That means all model predictions with a probability greater than 40% get labeled as being females.
+```{r}
+threshold_04_bt <- 
+  gender_pred_bt %>% 
+  mutate(thres_04_bt = ifelse(.pred_female > 0.4, "female", "male"),
+        thres_04_bt = as.factor(thres_04_bt))
+
+threshold_04_bt
+```
+
+
+- c2): 0.5 (i.e. threshold = 0.5)
+That means all model predictions with a probability greater than 50% get labeled as being females.
+```{r}
+threshold_05_bt <- 
+  gender_pred_bt %>% 
+  mutate(thres_05_bt = ifelse(.pred_female > 0.5, "female", "male"),
+        thres_05_bt = as.factor(thres_05_bt))
+
+threshold_05_bt
+```
+
+
+- c3): 0.7 (i.e. threshold = 0.7)
+That means all model predictions with a probability greater than 70% get labeled as being females.
+```{r}
+threshold_07_bt <- 
+  gender_pred_bt %>% 
+  mutate(thres_07_bt = ifelse(.pred_female > 0.7, "female", "male"),
+        thres_07_bt = as.factor(thres_07_bt))
+
+threshold_07_bt
+```
+
+
+
+#### Model 2 (Log Reg Class): Predictions mit Testdaten
+```{r}
+gender_pred_lr <- 
+  predict(gender_fit_lr_model, 
+          gender_test, 
+          type = "prob")
+```
+
+```{r}
+gender_pred_lr
+```
+
+
+- c1): 0.4 (i.e. threshold = 0.4)
+That means all model predictions with a probability greater than 40% get labeled as being females.
+```{r}
+threshold_04_log <- 
+  gender_pred_lr %>% 
+  mutate(thres_04 = ifelse(.pred_female > 0.4, "female", "male"),
+        thres_04 = as.factor(thres_04))
+
+threshold_04_log
+```
+
+
+- c2): 0.5 (i.e. threshold = 0.5)
+That means all model predictions with a probability greater than 50% get labeled as being females.
+```{r}
+threshold_05_log <- 
+  gender_pred_lr %>% 
+  mutate(thres_05 = ifelse(.pred_female > 0.5, "female", "male"),
+        thres_05 = as.factor(thres_05))
+
+threshold_05_log
+```
+
+
+- c3): 0.7 (i.e. threshold = 0.7)
+That means all model predictions with a probability greater than 70% get labeled as being females.
+```{r}
+threshold_07_log <- 
+  gender_pred_lr %>% 
+  mutate(thres_07 = ifelse(.pred_female > 0.7, "female", "male"),
+        thres_07 = as.factor(thres_07))
+
+threshold_07_log
+```
+
+
+#### 4.5 Confusion matrix & metrics
+
+##### 4.5.a. Compute the confusion matrix for every threshold (c1), c2) and c3)) in order to determine how many observations were correctly or incorrectly classified (use the test data) by the two models.
+
+```{r}
+library(caret)
+library(e1071)
+library(MLmetrics)
+```
+
+Classification: Predicted/Reality
+von 168 rows
+
+
+##### Model 1 (Boosted Tree):
+Confusion Matrix, threshold = 0.4
+```{r}
+confusionMatrix(threshold_04_bt$thres_04_bt, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.5
+```{r}
+confusionMatrix(threshold_05_bt$thres_05_bt, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.7
+```{r}
+confusionMatrix(threshold_07_bt$thres_07_bt, gender_test$Gender)
+```
+
+
+##### Model 2 (Log Reg Class):
+
+Confusion Matrix, threshold = 0.4
+```{r}
+confusionMatrix(threshold_04_log$thres_04, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.5
+```{r}
+confusionMatrix(threshold_05_log$thres_05, gender_test$Gender)
+```
+
+
+Confusion Matrix, threshold = 0.7
+```{r}
+confusionMatrix(threshold_07_log$thres_07, gender_test$Gender)
+```
+
+##### 4.5.b. Calculate the following metrics for your test data: 
+“Accuracy”, Precision" (what proportion of positive identifications was actually correct?), “Recall” (what proportion of actual positives was identified correctly) and the F1 score (measure of a test’s accuracy) for the thresholds in c1), c2) and c3). Which threshold would you recommend? Explain your choice.
+
+Classification: Predicted/Reality
+
+
+##### Accuracy
+siehe Confusion Matrix
+
+
+##### Precision
+Anteil korrekter Vorhersagen an positiven Identifikationen  (pro Reihe female)
+Precision erlaubt eine Einordnung der Genauigkeit in Hinblick auf falsch positive Ergebnisse eines Classifiers. Falsch negative Ergebnisse bleiben außen vor.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+prec = (76)/(76+10)
+prec
+```
+Ergebnis ist unter "Pos Pred Value" in der Confusion Matrix zu sehen.
+
+
+##### Recall
+Anteil an tatsächlichen positiven war korrekt vorhergesagt (true positive und false positive) (pro Spalte female)
+Der Recall-Score erlaubt die Einordnung der Ergebnisse in Hinblick auf die Rate von falsch negativen Klassifikationen eines Classifiers.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+recall = (76)/(76+27)
+recall
+```
+Ergebnis ist unter "Sensitivity" in der Confusion Matrix zu sehen.
+
+
+##### F1-Score
+Is defined as the harmonic mean (or a weighted average) of precision and recall.
+Er ermöglicht es, die Gesamtgenauigkeit der Vorhersagen eines Classifiers zu beschreiben.
+Ein Mittelwert zwischen Recall und Precision ergibt durchaus Sinn, um die allgemeine Genauigkeit einer Anwendung oder eines Classifiers zu bewerten.
+(Beispielhafte händische Berechnung für Log Reg Class mit threshold = 0.7)
+```{r}
+f1 = (2 * prec * recall) / (prec + recall) 
+f1
+```
+oder einfacher:
+
+
+##### F1-Score, Model 1 (Boosted Tree):
+Threshold = 0.4
+```{r}
+F1_Score(threshold_04_bt$thres_04_bt, gender_test$Gender)
+```
+
+
+Threshold = 0.5
+```{r}
+F1_Score(threshold_05_bt$thres_05_bt, gender_test$Gender)
+```
+
+
+Threshold = 0.7
+```{r}
+F1_Score(threshold_07_bt$thres_07_bt, gender_test$Gender)
+```
+
+
+##### F1-Score, Model 2 (Log Reg Class):
+Threshold = 0.4
+```{r}
+F1_Score(threshold_04_log$thres_04, gender_test$Gender)
+```
+
+
+Threshold = 0.5
+```{r}
+F1_Score(threshold_05_log$thres_05, gender_test$Gender)
+```
+
+
+Threshold = 0.7
+```{r}
+F1_Score(threshold_07_log$thres_07, gender_test$Gender)
+```
+
+
+##### Recommendation
+Auf Grundlage aller Daten (Accuracy und F1-Score) empfehlen wir die Nutzung des Threshold von 0.5
+
+
+
+##### 4.5.c. Display the ROC-curve for the two models and comment on the findings.
+
+##### Model 1 (Boosted Tree):
+```{r}
+gender_pred_bt %>% 
+  roc_curve(truth=gender_test$Gender, .pred_female) %>% 
+  autoplot()
+```
+
+```{r}
+gender_pred_bt %>% 
+  roc_auc(truth=gender_test$Gender, .pred_female)
+```
+
+
+##### Model 2 (Log Reg Class):
+```{r}
+gender_pred_lr %>% 
+  roc_curve(truth=gender_test$Gender, .pred_female) %>% 
+  autoplot()
+```
+
+```{r}
+gender_pred_lr %>% 
+  roc_auc(truth=gender_test$Gender, .pred_female)
+```
+
+
+Findings:
+Je mehr sich die ROC curve des statistischen Modells von der Winkelhalbierenden unterscheidet, um so zuverlässiger und besser sagt das Modell die beobachteten Werte vorher.
+Kurven und Werte unterscheiden sich minimal, sind aber beides gute Modelle mit jeweils Werten von über 0.85.
+
+
