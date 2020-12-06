@@ -1,0 +1,348 @@
+---
+title: "Regression_Neu"
+author: "Julia Zerrweck"
+date: "26.11.2020"
+output:
+  html_document:
+    toc: true
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smoth_scroll: true
+    highlight: tango
+    number_sections: false
+    theme: simplex
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+```
+#Regression 1
+##Daten laden
+
+```{r}
+library(readr)
+auto <- read_csv("https://raw.githubusercontent.com/sanjapero/Clustering/master/Marketing%20Analytics/auto.csv")
+```
+
+
+```{r}
+library(dplyr)
+glimpse(auto)
+```
+
+```{r}
+auto$horsepower <-  as.numeric(auto$horsepower)
+auto$origin <- as.factor(auto$origin)
+auto$name <- as.factor(auto$name)
+
+anyNA(auto, recursive = FALSE)
+```
+
+```{r}
+library(tidyr)
+auto <- drop_na(auto, horsepower)
+```
+
+
+```{r}
+library(psych)
+describe(auto)
+
+
+```
+##Use the regression function (lm) to perform a linear regression with mpg as the response and horsepower as the predictor. Comment on the output. In particular:
+###lm function
+```{r}
+lm_spec <- 
+  linear_reg() %>% 
+  set_engine("lm") %>% 
+  set_mode(mode = "regression")
+```
+
+#### Data splitting
+```{r}
+
+set.seed(42)
+
+auto_split <- initial_split(auto)
+auto_train <-  training(auto_split)
+auto_test <- testing(auto_split)
+
+```
+
+```{r}
+set.seed(42)
+
+cv_folds <- 
+  vfold_cv(auto_train,
+           v = 10,
+           strata = mpg,
+           breaks = 4)
+```
+
+```{r}
+ggplot(auto_train, aes(x = horsepower, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+###Is there a statistically significant relationship between the predictor and the response? [2 points]
+
+```{r}
+lm_auto_train = lm(mpg ~ horsepower, data=auto)
+summary(lm_auto_train)
+```
+Ja, da der p-Wert von 2.2e-16 nahe 0 ist.
+
+###How strong is the relationship between the predictor and the response? [2 points]
+Kann man ablesen beim Adjusted R-squared welcher in diesem Fall 0,6049 beträgt. Dies bedeutet dass 60% der Varianz durch horsepower erklärt wird.
+
+###Is the relationship between the predictor and the response positive or negative? [2 points]
+Negativ, da je mehr PS ein Auto hat, desto linearer wird die Kraftstoffeffizienz. Kann man am negativen Horsepower-Koeffizienten ablesen.
+
+###Provide an interpretation of the coefficients in the model. Describe their meaning in the regression method as well as their specific meaning in this example (i.e. the cuasal relationship between horsepower and mpg). [4 points]
+Der Steigungskoeffizient von Horsepower beträgt -0.157845 was bedeutet, dass mit jedem Horsepower mehr, sinkt MPG um ca. 0.15 Einheiten.
+Intercept ist nicht möglich, denn mit 0PS ist auch kein mpg möglich.
+
+###What is the predicted mpg associated with a horsepower of 98? [2 points]
+```{r}
+predict(lm_auto_train,data.frame(horsepower=c(98)),interval="prediction")
+```
+Die vorhergesagte mpg, mit einer Horsepower von 98, beträgt ungefähr 24,47.
+Wir sind zu 95% sicher, dass MPG eines Autos, mit einer Leistung von 98 PS, zwischen 14,81 und 34,12 liegt.
+
+###What is the root mean squared error (RMSE) of your model? Give an interpretation of the finding [4 point]
+```{r}
+lm_results <- 
+  lm_spec %>% 
+  fit_resamples(
+    mpg ~ horsepower,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+lm_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der mean-RMSE beträgt 4.787, wad bedeutet, dass die tatsächlichen MPG sich im Durchschnitt um 4,787 Einheiten von den Vorhersagen der Regression unterscheiden.
+
+###Plot the response and the predictor. Display the least squares regression line. [2 points]
+```{r}
+plot(auto_train$horsepower, auto_train$mpg, main = "Scatterplot of mpg vs. horsepower", xlab = "horsepower", ylab = "mpg", col = "black")
+abline(lm_auto_train, lwd = 2, lty = 1, col = "purple")
+```
+
+###Use a boosted decision tree to perform a regression with mpg as the response and horsepower as the predictor [4 points].
+```{r}
+#install.packages("xgboost")
+library(parsnip)
+```
+
+```{r}
+bt_model <- 
+  boost_tree() %>%
+  set_engine("xgboost") %>% 
+  set_mode("regression")
+```
+
+```{r}
+bt_model_fit <-
+  bt_model %>% 
+  fit(mpg ~ horsepower, data = auto_train)
+```
+
+###What is the predicted mpg associated with a horsepower of 98? [2 points]
+```{r}
+predict(bt_model_fit,data.frame(horsepower=c(98)))
+```
+Die vorhergesagte MPG mit Horsepower von 98 beträgt einen Wert von 20,17.
+
+###What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. [2 points]
+```{r}
+bt_results <- 
+  bt_model %>% 
+  fit_resamples(
+    mpg ~ horsepower,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+bt_results %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der RMSE beträgt 4,365, was bdeutetd, dass die tatsächlichen MPG sich im Durchschnitt um 4,365 Einheiten von den Vorhersagen des Boosted Tree Models unterscheiden. 
+Wenn man diesen Wert mit dem der linearen Regression vergleicht (4,787) erkennt man, dass man in diesem Fall das Boosted Decision Tree Model verwendet werden sollte, da dieser Wert deutlich niedriger ist. (4,365 < 4,787)
+
+
+#Regression 2
+##This question involves the use of multiple linear regression on the car data set.
+```{r}
+auto <- read.csv("https://raw.githubusercontent.com/sanjapero/Clustering/master/Marketing%20Analytics/auto.csv")
+```
+
+```{r}
+glimpse(auto)
+```
+
+
+```{r}
+sum(is.na(auto))
+```
+
+```{r}
+auto <- drop_na(auto)
+```
+
+```{r}
+summary(auto)
+```
+
+```{r}
+auto$horsepower <- as.double(auto$horsepower) 
+```
+
+#### Daten splitten
+```{r}
+
+set.seed(42) # Important! "TEST SET UND TRAININGS SET"
+
+auto_split <- initial_split(auto)
+auto_train <-  training(auto_split)
+auto_test <- testing(auto_split)
+
+```
+
+```{r}
+set.seed(42)
+
+cv_folds <-
+ vfold_cv(auto_train,
+           v = 10,
+           strata = mpg,
+           breaks = 4)
+```
+
+###Produce scatterplots to analyze the relationships between the variables in the data set. Interpret the findings. [4 points]
+```{r}
+pairs(~ mpg+cylinders+displacement+horsepower+weight+acceleration+year+origin, auto_train)
+```
+Findings:
+- je mehr Zylinder, desto weniger Reichweite (MPG)
+- je mehr Pferdestärke, desto mehr Gewicht
+- je mehr Pferdestärke, desto mehr Hubraum (displacement)
+- je mehr Pferdestärke, desto geringer die Zeit auf 60mph (acceleration/Beschleunigung)
+- je jünger das Auto (Jahr), desto höher die Reichweite (MPG)
+- Herkungt und Jahr haben keine Korrelation
+
+```{r}
+ggplot(auto_train, aes(x = cylinders, y = mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+###Compute the correlations between all variables. You will need to exclude the name variable, which is qualitative. Comment on your findings. [4 points]
+```{r}
+cor(auto_train[, !(names(auto_train)=="name")])
+#cor(subset(auto_train, select= c(-name, -origin)))
+```
+
+displacement + cylinder sind stark voneinander abhängig (0.9500259)
+displacement + weight sind stark voneinander abhängig (0.9257176)
+year und origin sind Angaben, die tendenziell vernachlässigt werden können, da sehr geringe Korrelation zu anderen Angaben
+Die größten Zusammenhänge bestehen zwischen den Variablen mpg, cylinders, displacement, hp und weight untereinander
+
+###Perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. In particular:
+```{r}
+mlr <- lm(mpg ~ .-name, auto_train)
+summary(mlr)
+```
+
+####Is there a relationship between the predictors and the response? [2 points]
+Ja, mit einem p-Wert von 2.2e-16.
+
+####Which predictors appear to have a statistically significant relationship to the response? [2 points]
+Wird rausgefunden, indem man die p-Werte, die der t-Statistik jedes Prädiktors zugeordnet sind überprüft. 
+"displacement", "weight", "year" und "origin" haben eine statistisch signifikante Beziehung, während "cylinders", "horsepower" und "acceleration" keine statistisch signifikante Beziehung haben.
+
+####What does the coefficient for the year variable suggest? [4 points]
+Der Koeffizient der Variablen "Jahr" besagt, dass der durchschnittliche Effekt einer Zunahme von 1 Jahr eine Zunahme von "mpg" um 0,7212 ist. Das bedeutet, dass Autos jedes Jahr um 0,72 mpg / Jahr sparsamer werden.
+
+####What is the predicted mpg associated with a horsepower of 98? [2 points]
+```{r}
+predict(mlr, data.frame(cylinders=c(8), displacement=(225), horsepower=c(98), weight=c(3086), acceleration=c(14), year=c(82), origin=c(2), name=c("vw pickup")),interval="prediction")
+```
+Bei PS von 98, liegt bei dem Modell ein Wert von 27,30 mpg vor.
+
+Testing with a real dataset of 98hp with a real mpg of 22
+```{r}
+predict(mlr, data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")),interval="prediction")
+```
+
+####What is the root mean squared error (MSE) of your model? [1 point]
+```{r}
+lm_results_2 <- 
+  lm_spec %>% 
+  fit_resamples(
+    mpg ~ .-name,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+lm_results_2 %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Mean-RMSE: 3,165
+Dies bedeutet, dass die tatsächlichen mpg sich im Durchschnitt um 3,165 Einheiten von den Vorhersagen der Regression unterscheiden.
+
+###Use a boosted decision tree to perform a regression with mpg as the response and all other variables except name as the predictors [4 points].
+```{r}
+bt_model_fit_2 <-
+  bt_model %>% 
+  fit(mpg ~ .-name, data = auto_train)
+```
+
+####What is the predicted mpg associated with a horsepower of 98? [2 points]
+```{r}
+predict(bt_model_fit_2,data.frame(cylinders=c(8), displacement=(225), horsepower=c(98), weight=c(3086), acceleration=c(14), year=c(82), origin=c(2), name=c("vw pickup")))
+```
+Bei horsepower von 98 sagt das Modell einen Wert von 20,73 mpg voraus.
+
+
+Testing with a real dataset of 98hp with a real mpg of 22:
+```{r}
+predict(bt_model_fit_2,data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")))
+```
+
+
+Das Boosted Tree Modell ist präziser in der Vorhersage, was man bei dem Beispiel mit einem realen Datensatzes erkennen kann. 
+Das Boosted Decision Tree Modell erreicht eine bessere Vorhersage mit 22,08 anstelle der 23,84 mit der multiplen linearen Regression.
+
+####What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. [2 points]
+```{r}
+bt_results_2 <- 
+  bt_model %>% 
+  fit_resamples(
+    mpg ~ .-name,
+    resamples = cv_folds
+    )
+```
+
+```{r}
+bt_results_2 %>% 
+  collect_metrics(summarize = TRUE)
+```
+
+Der RMSE beträgt 2,64.
+Beim linearen Modell liegt er bei 3,165 was bedeutet, dass mit dem Boosted Decision Tree Modell die Baweichung geringer und somit präziser ist.
+
+
