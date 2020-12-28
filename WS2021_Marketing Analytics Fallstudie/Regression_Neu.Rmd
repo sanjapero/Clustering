@@ -1,6 +1,6 @@
 ---
-title: "Regression_Neu"
-author: "Julia Zerrweck"
+title: "Regression 1&2"
+author: "Julia Zerrweck, Sanja Perovic"
 date: "26.11.2020"
 output:
   html_document:
