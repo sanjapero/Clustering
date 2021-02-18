@@ -327,16 +327,6 @@ predict(bt_model_fit_2,data.frame(cylinders=c(4), displacement=(113), horsepower
 Bei horsepower von 98 sagt das Modell einen Wert von 23.65 mpg voraus.
 
 
-Wie sieht der Datensatz mit horsepower 98 und mpg 22 aus?
-```{r}
-predict(mlr, data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")),interval="prediction")
-```
-
-```{r}
-predict(bt_model_fit_2,data.frame(cylinders=c(4), displacement=(121), horsepower=c(98), weight=c(2945), acceleration=c(14.5), year=c(75), origin=c(2), name=c("volvo 244dl")))
-```
-
-Wir können aus den Daten schlussfolgern, dass das BDT näher am tatsächlichen Ergebnis dran ist.
 
 ####What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. [2 points]
 ```{r}
@@ -886,46 +876,71 @@ oder einfacher:
 ##### F1-Score, Model 1 (Boosted Tree):
 Threshold = 0.4
 ```{r}
-F1_Score(bt_threshold_40$threshold_40, gender_test$Gender)
+f1_bt_40 <- F1_Score(bt_threshold_40$threshold_40, gender_test$Gender)
+f1_bt_40
 ```
 
 
 Threshold = 0.5
 ```{r}
-F1_Score(bt_threshold_50$threshold_50, gender_test$Gender)
+f1_bt_50 <- F1_Score(bt_threshold_50$threshold_50, gender_test$Gender)
+f1_bt_50
 ```
 
 
 Threshold = 0.7
 ```{r}
-F1_Score(bt_threshold_70$threshold_70, gender_test$Gender)
+f1_bt_70 <- F1_Score(bt_threshold_70$threshold_70, gender_test$Gender)
+f1_bt_70
 ```
 
 
 ##### F1-Score, Model 2 (Log Reg Class):
 Threshold = 0.4
 ```{r}
-F1_Score(logreg_threshold_40$threshold_40, gender_test$Gender)
+f1_logreg_40 <- F1_Score(logreg_threshold_40$threshold_40, gender_test$Gender)
+f1_logreg_40
 ```
 
 
 Threshold = 0.5
 ```{r}
-F1_Score(logreg_threshold_50$threshold_50, gender_test$Gender)
+f1_logreg_50 <- F1_Score(logreg_threshold_50$threshold_50, gender_test$Gender)
+f1_logreg_50
 ```
 
 
 Threshold = 0.7
 ```{r}
-F1_Score(logreg_threshold_70$threshold_70, gender_test$Gender)
+f1_logreg_70 <- F1_Score(logreg_threshold_70$threshold_70, gender_test$Gender)
+f1_logreg_70
 ```
 
-https://www.kdnuggets.com/2020/01/guide-precision-recall-confusion-matrix.html
 
+
+```{r}
+bt_model_rec <- tibble(
+  BT_Threshold = c(40, 50, 70),
+  Accuracy = c(accuracy_bt_40, accuracy_bt_50, accuracy_bt_70),
+  Precision = c(precision_bt_40, precision_bt_50, precision_bt_70),
+  Recall = c(recall_bt_40, recall_bt_50, recall_bt_70),
+  F1 = c(f1_bt_40, f1_bt_50, f1_bt_70)
+)
+bt_model_rec
+```
+```{r}
+logreg_model_rec <- tibble(
+  LogReg_Threshold = c(40, 50, 70),
+  Accuracy = c(accuracy_logreg_40, accuracy_logreg_50, accuracy_logreg_70),
+  Precision = c(precision_logreg_40, precision_logreg_50, precision_logreg_70),
+  Recall = c(recall_logreg_40, recall_logreg_50, recall_logreg_70),
+  F1 = c(f1_logreg_40, f1_logreg_50, f1_logreg_70)
+)
+logreg_model_rec
+```
 
 ##### Recommendation
-Auf Grundlage aller Daten (Accuracy und F1-Score) empfehlen wir die Nutzung des Threshold von 0.5
-
+Da die Zahlen in allen 4 Bereichen am besten bei der Logistic Regression mit einem Threshold von 40% abschneiden, empfehlen wir dieses zu nutzen.
 
 ##### 4.5.c. Display the ROC-curve for the two models and comment on the findings.
 
@@ -954,9 +969,6 @@ gender_pred_logreg %>%
   roc_auc(truth=gender_test$Gender, .pred_female)
 ```
 
-
-Findings:
-Je mehr sich die ROC curve des statistischen Modells von der Winkelhalbierenden unterscheidet, um so zuverlässiger und besser sagt das Modell die beobachteten Werte vorher.
-Kurven und Werte unterscheiden sich minimal, sind aber beides gute Modelle mit jeweils Werten von über 0.85.
+Wenn wir die beiden Kurven vergleichen, fällt auf, dass die ROC Kurve der Log Reg besser abschneidet, weil sie steiler nach oben geht und dadurch eine höhere Trefferquote hat. Außerdem ist ihr Area under Curve (AUC) Wert etwas besser (0.87) -> je näher der Wert an der 1 desto besser.
 
 
