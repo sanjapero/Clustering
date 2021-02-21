@@ -1,5 +1,5 @@
 ---
-title: "Problem Set Marketing Analytics"
+title: "Marketing Analytics & Social Media Intelligence (337090)"
 author: "Julia Zerrweck, Sanja Perovic"
 date: "18.11.2020"
 output:
@@ -25,11 +25,13 @@ knitr::opts_chunk$set(
 ```{r}
 library(tidyverse)
 library(tidymodels)
+library(tidyr)
+library(psych)
 library(dplyr)
 ```
 
-#Regression 1
-##Daten laden
+# Aufgabe 1: Regression I
+## Daten vorbereiten
 
 ```{r}
 library(readr)
@@ -38,7 +40,6 @@ auto <- read_csv("https://raw.githubusercontent.com/sanjapero/Clustering/master/
 
 
 ```{r}
-library(dplyr)
 glimpse(auto)
 ```
 
@@ -51,26 +52,20 @@ anyNA(auto, recursive = FALSE)
 ```
 
 ```{r}
-library(tidyr)
 auto <- drop_na(auto, horsepower)
-```
+describe(auto) 
+``` 
 
-
+## 1.a) Lineare Regression
+Use the regression function (lm) to perform a linear regression with mpg as the response and horsepower as the predictor. Comment on the output. In particular:
 ```{r}
-library(psych)
-describe(auto)
-```
-
-##Use the regression function (lm) to perform a linear regression with mpg as the response and horsepower as the predictor. Comment on the output. In particular:
-###lm function
-```{r}
-lm_spec <- 
+linear_lm <- 
   linear_reg() %>% 
   set_engine("lm") %>% 
   set_mode(mode = "regression")
 ```
 
-#### Data splitting
+### Data splitting
 ```{r}
 set.seed(42)
 
@@ -90,38 +85,47 @@ cv_folds <-
 ```
 
 
-###Is there a statistically significant relationship between the predictor and the response? [2 points]
+### 1.a)1.)
+Is there a statistically significant relationship between the predictor and the response?
 
 ```{r}
-lm_auto_train = lm(mpg ~ horsepower, data=auto)
-summary(lm_auto_train)
+linear_lm_train = lm(mpg ~ horsepower, data=auto)
+summary(linear_lm_train)
 ```
 Ja, da der p-Wert von 2.2e-16 nahe 0 ist.
 
-###How strong is the relationship between the predictor and the response? [2 points]
+### 1.a.)2.)
+How strong is the relationship between the predictor and the response? 
+
 Kann man ablesen beim Adjusted R-squared welcher in diesem Fall 0,6049 beträgt. 
 Dies bedeutet dass 60% der Varianz durch horsepower erklärt wird.
 
-###Is the relationship between the predictor and the response positive or negative? [2 points]
+### 1.a.)3.)
+Is the relationship between the predictor and the response positive or negative? 
+
 Negativ, da je mehr PS ein Auto hat, desto linearer wird die Kraftstoffeffizienz. 
 Kann man am negativen Horsepower-Koeffizienten ablesen.
 
-###Provide an interpretation of the coefficients in the model. Describe their meaning in the regression method as well as their specific meaning in this example (i.e. the cuasal relationship between horsepower and mpg). [4 points]
+### 1.a.)4.)
+Provide an interpretation of the coefficients in the model. Describe their meaning in the regression method as well as their specific meaning in this example (i.e. the cuasal relationship between horsepower and mpg). 
+
 Der Steigungskoeffizient von Horsepower beträgt -0.157845 was bedeutet, dass mit jedem Horsepower mehr, sinkt MPG um ca. 0.15 Einheiten.
 Intercept ist nicht möglich, denn mit 0PS ist auch kein mpg möglich.
 (Intercept ist der Mittelwert von Y (mpg) wenn X (hs)=0 ist.)
 
-###What is the predicted mpg associated with a horsepower of 98? [2 points]
+### 1.a.)5.)
+What is the predicted mpg associated with a horsepower of 98? 
 ```{r}
-predict(lm_auto_train,data.frame(horsepower=c(98)),interval="prediction")
+predict(linear_lm_train,data.frame(horsepower=c(98)),interval="prediction")
 ```
 Die vorhergesagte mpg, mit einer Horsepower von 98, beträgt ungefähr 24,47.
 Wir sind zu 95% sicher, dass MPG eines Autos, mit einer Leistung von 98 PS, zwischen 14,81 und 34,12 liegt.
 
-###What is the root mean squared error (RMSE) of your model? Give an interpretation of the finding [4 point]
+### 1.a.)6.)
+What is the root mean squared error (RMSE) of your model? Give an interpretation of the finding [4 point]
 ```{r}
 lm_results <- 
-  lm_spec %>% 
+  linear_lm %>% 
   fit_resamples(
     mpg ~ horsepower,
     resamples = cv_folds
@@ -135,46 +139,49 @@ lm_results %>%
 
 Der mean-RMSE beträgt 4.787, wad bedeutet, dass die tatsächlichen MPG sich im Durchschnitt um 4,787 Einheiten von den Vorhersagen der Regression unterscheiden.
 
-###Plot the response and the predictor. Display the least squares regression line. [2 points]
+### 1.b.)
+Plot the response and the predictor. Display the least squares regression line. 
 ```{r}
 plot(auto_train$horsepower, auto_train$mpg, 
      main = "Scatterplot of mpg vs. horsepower", 
      xlab = "horsepower", 
      ylab = "mpg", 
      col = "black")
-abline(lm_auto_train, lwd = 2, lty = 1, col = "purple")
+abline(linear_lm_train, lwd = 2, lty = 1, col = "purple")
 ```
 
 
-###Use a boosted decision tree to perform a regression with mpg as the response and horsepower as the predictor [4 points].
+### 1.c.)
+Use a boosted decision tree to perform a regression with mpg as the response and horsepower as the predictor [4 points].
 ```{r}
-#install.packages("xgboost")
 library(parsnip)
 ```
 
 ```{r}
-bt_model <- 
+bdt_model <- 
   boost_tree() %>%
   set_engine("xgboost") %>% 
   set_mode("regression")
 ```
 
 ```{r}
-bt_model_fit <-
-  bt_model %>% 
+bdt_model_fit <-
+  bdt_model %>% 
   fit(mpg ~ horsepower, data = auto_train)
 ```
 
-###What is the predicted mpg associated with a horsepower of 98? [2 points]
+### 1.c.)1.)
+What is the predicted mpg associated with a horsepower of 98?
 ```{r}
-predict(bt_model_fit,data.frame(horsepower=c(98)))
+predict(bdt_model_fit,data.frame(horsepower=c(98)))
 ```
 Die vorhergesagte MPG mit Horsepower von 98 beträgt einen Wert von 20,17.
 
-###What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. [2 points]
+### 1.c.)2.)
+What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
 ```{r}
-bt_results <- 
-  bt_model %>% 
+bdt_results <- 
+  bdt_model %>% 
   fit_resamples(
     mpg ~ horsepower,
     resamples = cv_folds
@@ -182,7 +189,7 @@ bt_results <-
 ```
 
 ```{r}
-bt_results %>% 
+bdt_results %>% 
   collect_metrics(summarize = TRUE)
 ```
 
@@ -190,8 +197,9 @@ Der RMSE beträgt 4,365, was bdeutetd, dass die tatsächlichen MPG sich im Durch
 Wenn man diesen Wert mit dem der linearen Regression vergleicht (4,787) erkennt man, dass man in diesem Fall das Boosted Decision Tree Model verwendet werden sollte, da dieser Wert deutlich niedriger ist. (4,365 < 4,787)
 
 
-#Regression 2
-##This question involves the use of multiple linear regression on the car data set.
+# Aufgabe 2: Regression II
+This question involves the use of multiple linear regression on the car data set.
+## Daten vorbereiten
 ```{r}
 auto <- read.csv("https://raw.githubusercontent.com/sanjapero/Clustering/master/Marketing%20Analytics/auto.csv")
 ```
@@ -216,7 +224,6 @@ summary(auto)
 auto$horsepower <- as.double(auto$horsepower) 
 ```
 
-#### Daten splitten
 ```{r}
 
 set.seed(42)
@@ -236,7 +243,8 @@ cv_folds <-
            breaks = 4)
 ```
 
-###Produce scatterplots to analyze the relationships between the variables in the data set. Interpret the findings. [4 points]
+### 2.a.)
+Produce scatterplots to analyze the relationships between the variables in the data set. Interpret the findings.
 
 ```{r}
 ggplot(auto_train, aes(x = mpg, y = displacement)) +
@@ -262,43 +270,53 @@ ggplot(auto_train, aes(x = mpg, y = weight)) +
 ```
 Je schwerer ein Auto ist desto höher ist der Treibstoffverbrauch.
 
-###Compute the correlations between all variables. You will need to exclude the name variable, which is qualitative. Comment on your findings. [4 points]
+### 2.b.)
+Compute the correlations between all variables. You will need to exclude the name variable, which is qualitative. Comment on your findings.
 ```{r}
 cor(auto_train[, !(names(auto_train)=="name")])
 ```
 
-displacement + cylinder sind stark voneinander abhängig (0.9500259)
-displacement + weight sind stark voneinander abhängig (0.9257176)
-year und origin sind Angaben, die tendenziell vernachlässigt werden können, da sehr geringe Korrelation zu anderen Angaben
-Die größten Zusammenhänge bestehen zwischen den Variablen mpg, cylinders, displacement, hp und weight untereinander
+Die Variablen Displacement  und Cylinder sind am stärksten voneinander abhängig.
+Die Variablen Displacement  und Weight sind auch sehr stark voneinander abhängig.
+Die Variable Acceleration und Origin sind am wenigsten voneinander abhängig.
+Die Variablen Year und Origin sind auch sehr wenig voneinander abhängig.
 
-###Perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. In particular:
+### 2.c.)
+Perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. In particular:
 ```{r}
 mlr <- lm(mpg ~ .-name, auto_train)
 summary(mlr)
 ```
 
-####Is there a relationship between the predictors and the response? [2 points]
+#### 2.c.)1.)
+Is there a relationship between the predictors and the response?
+
 Ja, mit einem p-Wert von 2.2e-16.
 
-####Which predictors appear to have a statistically significant relationship to the response? [2 points]
+#### 2.c.)2.)
+Which predictors appear to have a statistically significant relationship to the response?
+
 Wird rausgefunden, indem man die p-Werte, die der t-Statistik jedes Prädiktors zugeordnet sind überprüft. 
 "weight", "year" und "origin" haben eine statistisch signifikante Beziehung, während "cylinders", "displacement", "horsepower" und "acceleration" keine statistisch signifikante Beziehung haben.
 
-####What does the coefficient for the year variable suggest? [4 points]
+#### 2.c.)3.)
+What does the coefficient for the year variable suggest? 
+
 Der Koeffizient der Variablen "Jahr" besagt, dass der durchschnittliche Effekt einer Zunahme von 1 Jahr eine Zunahme von "mpg" um 0,7212 ist. Das bedeutet, dass Autos jedes Jahr um 0,72 mpg / Jahr sparsamer werden.
 
-####What is the predicted mpg associated with a horsepower of 98? [2 points]
+#### 2.c.)4.)
+What is the predicted mpg associated with a horsepower of 98?
 ```{r}
 predict(mlr, data.frame(cylinders=c(4), displacement=(113), horsepower=c(98), weight=c(2372), acceleration=c(15), year=c(70), origin=c(3), name=c("toyota corona mark ii")),interval="prediction")
 ```
-Wenn Horsepower 98 ist, dann haben wir einen mpg Wert von 24.3
+Wenn Horsepower = 98 ist, dann haben wir einen mpg Wert von 24.3
 
 
-####What is the root mean squared error (MSE) of your model? [1 point]
+#### 2.c.)5.)
+What is the root mean squared error (MSE) of your model?
 ```{r}
-lm_results_2 <- 
-  lm_spec %>% 
+second_lm_results <- 
+  linear_lm %>% 
   fit_resamples(
     mpg ~ .-name,
     resamples = cv_folds
@@ -306,32 +324,34 @@ lm_results_2 <-
 ```
 
 ```{r}
-lm_results_2 %>% 
+second_lm_results %>% 
   collect_metrics(summarize = TRUE)
 ```
 
 Mean-RMSE: 3,165
 Dies bedeutet, dass die tatsächlichen mpg sich im Durchschnitt um 3,165 Einheiten von den Vorhersagen der Regression unterscheiden.
 
-###Use a boosted decision tree to perform a regression with mpg as the response and all other variables except name as the predictors [4 points].
+### 2.d.)
+Use a boosted decision tree to perform a regression with mpg as the response and all other variables except name as the predictors.
 ```{r}
-bt_model_fit_2 <-
-  bt_model %>% 
+second_bdt_model_fit <-
+  bdt_model %>% 
   fit(mpg ~ .-name, data = auto_train)
 ```
 
-####What is the predicted mpg associated with a horsepower of 98? [2 points]
+#### 2.d.)1.)
+What is the predicted mpg associated with a horsepower of 98?
 ```{r}
-predict(bt_model_fit_2,data.frame(cylinders=c(4), displacement=(113), horsepower=c(98), weight=c(2372), acceleration=c(15), year=c(70), origin=c(3), name=c("toyota corona mark ii")))
+predict(second_bdt_model_fit,data.frame(cylinders=c(4), displacement=(113), horsepower=c(98), weight=c(2372), acceleration=c(15), year=c(70), origin=c(3), name=c("toyota corona mark ii")))
 ```
 Bei horsepower von 98 sagt das Modell einen Wert von 23.65 mpg voraus.
 
 
-
-####What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. [2 points]
+#### 2.d.)2.)
+What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model. 
 ```{r}
-bt_results_2 <- 
-  bt_model %>% 
+second_bdt_model_fit <- 
+  bdt_model %>% 
   fit_resamples(
     mpg ~ .-name,
     resamples = cv_folds
@@ -339,20 +359,17 @@ bt_results_2 <-
 ```
 
 ```{r}
-bt_results_2 %>% 
+second_bdt_model_fit %>% 
   collect_metrics(summarize = TRUE)
 ```
 
 Der RMSE ist beim BDT (2.76) deutlich niedriger als beim LM (3.17) und somit präziser.
 
 
-# 3. Sales analysis
-## 3.a. Fit a multiple regression model to predict Sales using Price, Urban, and US. Use training and test data.
-### Data preparation
+# Aufgabe 3: Sales Analysis
+
+## Daten vorbereiten
 ```{r}
-library(tidyverse)
-library(tidymodels)
-library(dplyr)
 carseats <- read.csv("carseats.csv")
 glimpse(carseats)
 ```
@@ -361,7 +378,6 @@ glimpse(carseats)
 drop_na(carseats)
 ```
 
-### Data splitting
 ```{r}
 set.seed(42) 
 
@@ -375,76 +391,88 @@ cv_folds <-
            breaks = 4)
 ```
 
+### 3.a.) 
+Fit a multiple regression model to predict Sales using Price, Urban, and US. Use training and test data.
 
-### Multiple regression model
+Multiple Regression Model
 ```{r}
-mrm_carseats <- lm(Sales ~ Price + Urban + US, data = carseats_train)
-summary(mrm_carseats)
+mrm_salesanalysis <- lm(Sales ~ Price + Urban + US, data = carseats_train)
+summary(mrm_salesanalysis)
 ```
 
 
-### 3.b. Provide an interpretation of each coefficient in the model. Be careful — some of the variables in the model are qualitative!
+### 3.b.) 
+Provide an interpretation of each coefficient in the model. Be careful — some of the variables in the model are qualitative!
+
 Price: erhöht sich der Preis kommt es zu einem Rückgang der Sales um 57,62 Einheiten.
 Urban: durchschnittliche Verkauf von Einheiten in städtischen Gebieten um 165,97 Einheiten geringer ist als in ländlichen Gebieten
 US: in einem US-Geschäft werden durchschnittlich 1329,56 Einheiten mehr verkauft  als in einem Nicht-US-Geschäft.
 
-### 3.c. For which of the predictors can you reject the null hypothesis H0 : βj = 0?
-Price
-US
+### 3.c.)
+For which of the predictors can you reject the null hypothesis H0 : βj = 0?
 
-### 3.d. Fit a smaller model: On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome (i.e. update your model).
+Sowohl für Price als auch US.
+
+### 3.d.) 
+Fit a smaller model: On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome (i.e. update your model).
+
 ```{r}
-mrm_carseats_ <- lm(Sales ~ Price + US, data = carseats_train)
-summary(mrm_carseats_ )
+mrm_salesanalysis_smaller <- lm(Sales ~ Price + US, data = carseats_train)
+summary(mrm_salesanalysis_smaller)
 ```
 
 
-### 3.e. How well do the models in a. and d. fit the data?
+### 3.e.)
+How well do the models in a. and d. fit the data?
+
 Eigentlich sind sie in etwa gleich, da der RSE bei unserem neuen Model nur minimal besser abschneidet --> gernigere Fehlerquote bei der Regression. Der R-squared liegt ebenfalls bei beiden bei ca. 27% --> nur dieser Anteil der Streuung der Sales Werte wird durch die Predictors beeinflusst. 
 
 
-### 3.f. Use a boosted decision tree to perform the regression in a.
+### 3.f.)
+Use a boosted decision tree to perform the regression in a.
 ```{r}
-bt_model <- 
+bdt_model <- 
   boost_tree() %>%
   set_engine("xgboost") %>% 
   set_mode("regression")
 
 bdt_carseats <-
-  bt_model %>% 
+  bdt_model %>% 
   fit(Sales ~ Price + Urban + US, data = carseats_train)
 
 ```
 
 
-#### 3.f.1. What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
+#### 3.f.)1.)
+What is the root mean squared error (RMSE) of your model? Compare the finding with the linear regression model.
 ```{r}
-bt_results_seats <- 
-  bt_model %>% 
+bdt_results_seats <- 
+  bdt_model %>% 
   fit_resamples(
     Sales ~ Price + Urban + US,
-    resamples = cv_folds_seats
+    resamples = cv_folds 
     )
 
-bt_results_seats %>% 
+bdt_results_seats %>% 
   collect_metrics(summarize = TRUE)
 
 ```
 
-RMSE liegt bei 2.657 im Vgl. zum RMSE des linear regression model von 2.475. D.h. das linear model ist hier präziser und sollte angewendet werden.
-R-squared liegt im Vgl zum linearen Modell nur noch bei 0.204, d.h. dass sogar noch weniger der Sales erklärt werden können, weil man den Anteil der Veränderungen weniger bestimmen kann. 
+RMSE liegt bei 2.703 im Vgl. zum RMSE des linear regression model von 2.475. D.h. das linear model ist hier präziser und sollte angewendet werden.
+R-squared liegt im Vgl zum linearen Modell nur noch bei 0.163, d.h. dass sogar noch weniger der Sales erklärt werden können, weil man den Anteil der Veränderungen weniger bestimmen kann. 
 
 
-# 4. Gender analysis
-## Data preparation
+# Aufgabe 4: Gender Analysis
+## Daten vorbereiten
 ```{r}
 responses_df <- read.csv("responses.csv", na.strings = c("", "NA"))
-responses_df <- drop_na(responses)
+responses_df <- drop_na(responses_df)
 responses_df
 ```
 
 
-### 4.1 Data exploration
+### 4.1.)
+Data Exploration
 
 ```{r}
 ggplot(responses_df, aes(x=Gender)) +
@@ -483,21 +511,22 @@ Man kann erkennen, dass Männer tatsächlich eher abgeneigt sind zu tanzen als F
 
 
 
-# 4.2 Fit models
-## Fit two models with (at least four) predictor variables of your choice.
+## 4.2 
+### Fit models
+Fit two models with (at least four) predictor variables of your choice.
 
 ```{r}
 responses_df$Gender <- as.factor(responses_df$Gender)
 ```
 
 ```{r}
-df_gender <- subset(responses_df, select=c(Gender, Romantic, War, Science.and.technology, Dancing))
+gender_df <- subset(responses_df, select=c(Gender, Romantic, War, Science.and.technology, Dancing))
 ```
 
 ```{r}
 set.seed(42) 
 
-gender_split <- initial_split(df_gender)
+gender_split <- initial_split(gender_df)
 gender_train <- training(gender_split)
 gender_test <- testing(gender_split)
 
@@ -510,11 +539,8 @@ cv_folds_gender <-
            breaks = 4)
 ```
 
-```{r}
-library(skimr)  
-```
 
-## Create Recipe
+### Create Recipe
 ```{r}
 gender_recipe <- 
   recipe(Gender ~ ., 
@@ -524,50 +550,48 @@ summary(gender_recipe)
 ```
 
 
-### Model 1
-#### Boosted Desicion Tree Definition
+### Model 1: Boosted Desicion Tree Definition
 ```{r}
-bt_model_def<- 
+bdt_model_def<- 
   boost_tree() %>%
   set_engine("xgboost") %>% 
   set_mode("classification")
 ```
 
 
-#### Pair models and recipes
+#### Pair Models and Recipes
 ```{r}
-gender_wflow_bt_model <-
+gender_wflow_bdt_model <-
   workflow() %>% 
-  add_model(bt_model_def) %>% 
+  add_model(bdt_model_def) %>% 
   add_recipe(gender_recipe)
 
-gender_wflow_bt_model
+gender_wflow_bdt_model
 ```
 
 
-#### Train models
+#### Train Models
 ```{r}
-gender_fit_bt_model <-
-  gender_wflow_bt_model %>% 
+gender_fit_bdt_model <-
+  gender_wflow_bdt_model %>% 
   fit(data = gender_train)
 ```
 
 
 ```{r}
-bt_results <- bt_model_def %>% 
+bdt_results <- bdt_model_def %>% 
   fit_resamples(
     Gender ~ .,
     resamples = cv_folds_gender)
-bt_results
+bdt_results
 ```
 ```{r}
-bt_results %>%
+bdt_results %>%
   collect_metrics(summarize = TRUE)
 ```
 
 
-### Model 2
-#### Logistic Regression
+### Model 2: Logistic Regression
 ```{r}
 logreg_gender <- logistic_reg() %>%
   set_engine("glm") %>%
@@ -575,7 +599,7 @@ logreg_gender <- logistic_reg() %>%
 ```
 
 
-##### Pair models and recipes
+#### Pair Models and Recipes
 ```{r}
 gender_wflow_logreg_model <-
   workflow() %>% 
@@ -586,7 +610,7 @@ gender_wflow_logreg_model
 ```
 
 
-##### Train models
+#### Train Models
 ```{r}
 gender_fit_logreg_model <-
   gender_wflow_logreg_model %>% 
@@ -612,23 +636,25 @@ results_logreg
 
 
 
-#### 4.3 Update models
+## 4.3 Update models
+
 Now that you see the results of the models, explain whether you would recommend to exclude predictor variables from your models. Update your models if necessary.
 
 Wir machen kein Update, da sich die Werte nicht verändern wenn wir einen Predictor ausschließen. 
 
 
-#### 4.4 Predictions
+## 4.4 Predictions
+
 Use your (updated) models and predict the probability that a respondent is male or female. Classify a respondent as female (with label ‘female’) if the predicted probability exceeds:
 - c1): 0.4 (i.e. threshold = 0.4) 
 - c2): 0.5 (i.e. threshold = 0.5)
 - c3): 0.7 (i.e. threshold = 0.7). 
 
 
-#### Boosted Desicion Tree Vorhersagen mit Testdaten
+### Boosted Desicion Tree Prediction
 ```{r}
-bt_prediction <- 
-  predict(gender_fit_bt_model, 
+bdt_prediction <- 
+  predict(gender_fit_bdt_model, 
           gender_test, 
           type = "prob")%>%
  bind_cols(gender_test %>% 
@@ -636,43 +662,49 @@ bt_prediction <-
                      War, 
                      Romantic,
                      Science.and.technology))
-bt_prediction
+bdt_prediction
 ```
 
 
 
-####c1): Alle Vorhersagen mit einer Wahrscheinlichkeit über 40% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.4
+
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 40% werden als "weiblich" gekennzeichnet.
 ```{r}
-bt_threshold_40 <- 
-  gender_pred_bt %>% 
+bdt_threshold_40 <- 
+  bdt_prediction %>% 
   mutate(threshold_40 = ifelse(.pred_female > 0.4, "female", "male"),
         threshold_40 = as.factor(threshold_40))
-bt_threshold_40
+bdt_threshold_40
 ```
 
 
-####c2): Alle Vorhersagen mit einer Wahrscheinlichkeit über 50% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.5
+
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 50% werden als "weiblich" gekennzeichnet.
 ```{r}
-bt_threshold_50 <- 
-  gender_pred_bt %>% 
+bdt_threshold_50 <- 
+  bdt_prediction %>% 
   mutate(threshold_50 = ifelse(.pred_female > 0.5, "female", "male"),
         threshold_50 = as.factor(threshold_50))
-bt_threshold_50
+bdt_threshold_50
 ```
 
 
-####c3): Alle Vorhersagen mit einer Wahrscheinlichkeit über 70% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.7
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 70% werden als "weiblich" gekennzeichnet.
 ```{r}
-bt_threshold_70 <- 
-  gender_pred_bt %>% 
+bdt_threshold_70 <- 
+  bdt_prediction %>% 
   mutate(threshold_70 = ifelse(.pred_female > 0.7, "female", "male"),
         threshold_70 = as.factor(threshold_70))
-bt_threshold_70
+bdt_threshold_70
 ```
 
 
 
-#### Logistic Regression Vorhersagen mit Testdaten
+### Logistic Regression Prediction
+
 ```{r}
 gender_pred_logreg <- 
   predict(gender_fit_logreg_model, 
@@ -687,7 +719,9 @@ gender_pred_logreg
 ```
 
 
-####c1): Alle Vorhersagen mit einer Wahrscheinlichkeit über 40% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.4
+
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 40% werden als "weiblich" gekennzeichnet.
 ```{r}
 logreg_threshold_40 <- 
   gender_pred_logreg %>% 
@@ -697,7 +731,9 @@ logreg_threshold_40
 ```
 
 
-####c2): Alle Vorhersagen mit einer Wahrscheinlichkeit über 50% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.5
+
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 50% werden als "weiblich" gekennzeichnet.
 ```{r}
 logreg_threshold_50 <- 
   gender_pred_logreg %>% 
@@ -707,7 +743,8 @@ logreg_threshold_50
 ```
 
 
-####c3): Alle Vorhersagen mit einer Wahrscheinlichkeit über 70% werden als "weiblich" gekennzeichnet.
+#### Threshold 0.7
+Alle Vorhersagen mit einer Wahrscheinlichkeit über 70% werden als "weiblich" gekennzeichnet.
 ```{r}
 logreg_threshold_70 <- 
   gender_pred_logreg %>% 
@@ -717,83 +754,85 @@ logreg_threshold_70
 ```
 
 
-#### 4.5 Confusion Matrix & Metrics
+## 4.5 Confusion Matrix & Metrics
 
-##### 4.5.a. Compute the confusion matrix for every threshold (c1), c2) and c3)) in order to determine how many observations were correctly or incorrectly classified (use the test data) by the two models.
+### 4.5.)a.) 
+Compute the confusion matrix for every threshold (c1), c2) and c3)) in order to determine how many observations were correctly or incorrectly classified (use the test data) by the two models.
 
-##### Confusion Matrix Boosted Decision Tree 
-40%
+#### Confusion Matrix Boosted Decision Tree 
+##### 40%
 ```{r}
 library(caret)
 library(e1071)
 library(MLmetrics)
 
-confusionMatrix(bt_threshold_40$threshold_40, gender_test$Gender)
+confusionMatrix(bdt_threshold_40$threshold_40, gender_test$Gender)
 ```
 
 
-50%
+##### 50%
 ```{r}
-confusionMatrix(bt_threshold_50$threshold_50, gender_test$Gender)
+confusionMatrix(bdt_threshold_50$threshold_50, gender_test$Gender)
 ```
 
 
-70%
+##### 70%
 ```{r}
-confusionMatrix(bt_threshold_70$threshold_70, gender_test$Gender)
+confusionMatrix(bdt_threshold_70$threshold_70, gender_test$Gender)
 ```
 
 
-##### Confusion Matrix Logistic Regression
-40%
+#### Confusion Matrix Logistic Regression
+##### 40%
 
 ```{r}
 confusionMatrix(logreg_threshold_40$threshold_40, gender_test$Gender)
 ```
 
 
-50%
+##### 50%
 ```{r}
 confusionMatrix(logreg_threshold_50$threshold_50, gender_test$Gender)
 ```
 
 
-70%
+##### 70%
 ```{r}
 confusionMatrix(logreg_threshold_70$threshold_70, gender_test$Gender)
 ```
 
-##### 4.5.b. Calculate the following metrics for your test data: “Accuracy”, Precision" (what proportion of positive identifications was actually correct?), “Recall” (what proportion of actual positives was identified correctly) and the F1 score (measure of a test’s accuracy) for the thresholds in c1), c2) and c3). Which threshold would you recommend? Explain your choice. [12 points]
+#### 4.5.)b.) 
+Calculate the following metrics for your test data: “Accuracy”, Precision" (what proportion of positive identifications was actually correct?), “Recall” (what proportion of actual positives was identified correctly) and the F1 score (measure of a test’s accuracy) for the thresholds in c1), c2) and c3). Which threshold would you recommend? Explain your choice. 
 
 
 ##### Accuracy
 A = (TP+TN)/(TP+TN+FP+FN)
-Boosted Decision Tree (40%):
+###### Boosted Decision Tree (40%):
 ```{r}
-accuracy_bt_40 = (80+45)/(80+45+23+20)
-accuracy_bt_40
+accuracy_bdt_40 = (80+45)/(80+45+23+20)
+accuracy_bdt_40
 ```
-Boosted Decision Tree (50%):
+###### Boosted Decision Tree (50%):
 ```{r}
-accuracy_bt_50 = (80+50)/(80+50+23+15)
-accuracy_bt_50
+accuracy_bdt_50 = (80+50)/(80+50+23+15)
+accuracy_bdt_50
 ```
-Boosted Decision Tree (70%):
+###### Boosted Decision Tree (70%):
 ```{r}
-accuracy_bt_70 = (74+54)/(74+54+29+11)
-accuracy_bt_70
+accuracy_bdt_70 = (74+54)/(74+54+29+11)
+accuracy_bdt_70
 ```
-Logistische Regression (40%):
+###### Logistische Regression (40%):
 ```{r}
 accuracy_logreg_40 = (92+41)/(91+41+11+24)
 accuracy_logreg_40
 ```
-Logistische Regression (50%):
+###### Logistische Regression (50%):
 ```{r}
 accuracy_logreg_50 = (78+47)/(78+47+25+18)
 accuracy_logreg_50
 ```
-Logistische Regression (70%):
+###### Logistische Regression (70%):
 ```{r}
 accuracy_logreg_70 = (73+53)/(73+53+30+12)
 accuracy_logreg_70
@@ -801,32 +840,32 @@ accuracy_logreg_70
 
 ##### Precision
 P = TP/(TP+FP)
-Boosted Decision Tree  (40%):
+###### Boosted Decision Tree (40%):
 ```{r}
-precision_bt_40 = (80)/(80+20)
-precision_bt_40
+precision_bdt_40 = (80)/(80+20)
+precision_bdt_40
 ```
-Boosted Decision Tree  (50%):
+###### Boosted Decision Tree (50%):
 ```{r}
-precision_bt_50 = (80)/(80+15)
-precision_bt_50
+precision_bdt_50 = (80)/(80+15)
+precision_bdt_50
 ```
-Boosted Decision Tree (70%):
+###### Boosted Decision Tree (70%):
 ```{r}
-precision_bt_70 = (74)/(74+11)
-precision_bt_70
+precision_bdt_70 = (74)/(74+11)
+precision_bdt_70
 ```
-Logistische Regression (40%):
+###### Logistische Regression (40%):
 ```{r}
 precision_logreg_40 = (92)/(92+24)
 precision_logreg_40
 ```
-Logistische Regression (50%):
+###### Logistische Regression (50%):
 ```{r}
 precision_logreg_50 = (78)/(78+18)
 precision_logreg_50
 ```
-Logistische Regression (70%):
+###### Logistische Regression (70%):
 ```{r}
 precision_logreg_70 = (73)/(73+12)
 precision_logreg_70
@@ -834,99 +873,91 @@ precision_logreg_70
 
 ##### Recall
 P = TP/(TP+FN)
-Boosted Decision Tree  (40%):
+###### Boosted Decision Tree (40%):
 ```{r}
-recall_bt_40 = (80)/(80+23)
-recall_bt_40
+recall_bdt_40 = (80)/(80+23)
+recall_bdt_40
 ```
-Boosted Decision Tree  (50%):
+###### Boosted Decision Tree (50%):
 ```{r}
-recall_bt_50 = (80)/(80+23)
-recall_bt_50
+recall_bdt_50 = (80)/(80+23)
+recall_bdt_50
 ```
-Boosted Decision Tree (70%):
+###### Boosted Decision Tree (70%):
 ```{r}
-recall_bt_70 = (74)/(74+29)
-recall_bt_70
+recall_bdt_70 = (74)/(74+29)
+recall_bdt_70
 ```
-Logistische Regression (40%):
+###### Logistische Regression (40%):
 ```{r}
 recall_logreg_40 = (92)/(92+11)
 recall_logreg_40
 ```
-Logistische Regression (50%):
+###### Logistische Regression (50%):
 ```{r}
 recall_logreg_50 = (78)/(78+25)
 recall_logreg_50
 ```
-Logistische Regression (70%):
+###### Logistische Regression (70%):
 ```{r}
 recall_logreg_70 = (73)/(73+30)
 recall_logreg_70
 ```
 
 ##### F1-Score
-```{r}
-f1 = (2 * prec * recall) / (prec + recall) 
-f1
-```
-oder einfacher:
-
-
-##### F1-Score, Model 1 (Boosted Tree):
+###### Boosted Decision Tree (40%):
 Threshold = 0.4
 ```{r}
-f1_bt_40 <- F1_Score(bt_threshold_40$threshold_40, gender_test$Gender)
-f1_bt_40
+f1_bdt_40 <- F1_Score(bdt_threshold_40$threshold_40, gender_test$Gender)
+f1_bdt_40
 ```
 
 
-Threshold = 0.5
+###### Boosted Decision Tree (50%):
 ```{r}
-f1_bt_50 <- F1_Score(bt_threshold_50$threshold_50, gender_test$Gender)
-f1_bt_50
+f1_bdt_50 <- F1_Score(bdt_threshold_50$threshold_50, gender_test$Gender)
+f1_bdt_50
 ```
 
 
-Threshold = 0.7
+###### Boosted Decision Tree (70%):
 ```{r}
-f1_bt_70 <- F1_Score(bt_threshold_70$threshold_70, gender_test$Gender)
-f1_bt_70
+f1_bdt_70 <- F1_Score(bdt_threshold_70$threshold_70, gender_test$Gender)
+f1_bdt_70
 ```
 
 
-##### F1-Score, Model 2 (Log Reg Class):
-Threshold = 0.4
+###### Logistische Regression (40%):
 ```{r}
 f1_logreg_40 <- F1_Score(logreg_threshold_40$threshold_40, gender_test$Gender)
 f1_logreg_40
 ```
 
 
-Threshold = 0.5
+###### Logistische Regression (50%):
 ```{r}
 f1_logreg_50 <- F1_Score(logreg_threshold_50$threshold_50, gender_test$Gender)
 f1_logreg_50
 ```
 
 
-Threshold = 0.7
+###### Logistische Regression (70%):
 ```{r}
 f1_logreg_70 <- F1_Score(logreg_threshold_70$threshold_70, gender_test$Gender)
 f1_logreg_70
 ```
 
 
-
+####### Übersicht
 ```{r}
-bt_model_rec <- tibble(
-  BT_Threshold = c(40, 50, 70),
-  Accuracy = c(accuracy_bt_40, accuracy_bt_50, accuracy_bt_70),
-  Precision = c(precision_bt_40, precision_bt_50, precision_bt_70),
-  Recall = c(recall_bt_40, recall_bt_50, recall_bt_70),
-  F1 = c(f1_bt_40, f1_bt_50, f1_bt_70)
+bdt_model_rec <- tibble(
+  BDT_Threshold = c(40, 50, 70),
+  Accuracy = c(accuracy_bdt_40, accuracy_bdt_50, accuracy_bdt_70),
+  Precision = c(precision_bdt_40, precision_bdt_50, precision_bdt_70),
+  Recall = c(recall_bdt_40, recall_bdt_50, recall_bdt_70),
+  F1 = c(f1_bdt_40, f1_bdt_50, f1_bdt_70)
 )
-bt_model_rec
+bdt_model_rec
 ```
 ```{r}
 logreg_model_rec <- tibble(
@@ -942,22 +973,23 @@ logreg_model_rec
 ##### Recommendation
 Da die Zahlen in allen 4 Bereichen am besten bei der Logistic Regression mit einem Threshold von 40% abschneiden, empfehlen wir dieses zu nutzen.
 
-##### 4.5.c. Display the ROC-curve for the two models and comment on the findings.
+#### 4.5.)c.) 
+Display the ROC-curve for the two models and comment on the findings.
 
-##### Model 1 (Boosted Tree):
+##### Boosted Decision Tree
 ```{r}
-gender_pred_bt %>% 
+bdt_prediction %>% 
   roc_curve(truth=gender_test$Gender, .pred_female) %>% 
   autoplot()
 ```
 
 ```{r}
-gender_pred_bt %>% 
+bdt_prediction %>% 
   roc_auc(truth=gender_test$Gender, .pred_female)
 ```
 
 
-##### Model 2 (Log Reg Class):
+##### Logistic Regression
 ```{r}
 gender_pred_logreg %>% 
   roc_curve(truth=gender_test$Gender, .pred_female) %>% 
