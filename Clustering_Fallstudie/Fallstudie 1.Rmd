@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 	warning = FALSE
 )
 ```
-
+#kk
 # Data preparation
 ## a
 ```{r}
